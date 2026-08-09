@@ -8,5 +8,6 @@ const APP_MODULI = [
     { id: "ancora",    titolo: "Allarme Ancora",icona: "⚓", file: "moduli/ancora.html" },
     { id: "fari",      titolo: "Fari e Fanali", icona: "💡", file: "moduli/fari.html" },
     { id: "maree",     titolo: "Calcolo Maree", icona: "📉", file: "moduli/maree.html" },
-    { id: "motore",    titolo: "Autonomia",     icona: "⛽", file: "moduli/motore.html" }
+    { id: "motore",    titolo: "Autonomia",     icona: "⛽", file: "moduli/motore.html" },
+    { id: "vhf",       titolo: "Radio VHF",     icona: "📻", file: "moduli/vhf.html" }
 ];

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .radio-box { 
+            background: #0f172a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+            border-left: 4px solid #ef4444; 
+            border-right: 4px solid #ef4444;
+        }
+        .script-line { 
+            font-family: monospace; 
+            font-size: 1.1rem; 
+            color: #f8fafc; 
+            margin-bottom: 8px; 
+        }
+        .highlight { color: #ef4444; font-weight: bold; }
+        .ptt-btn { 
+            background: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 15px; 
+            border-radius: 50px; 
+            font-size: 1.2rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-top: 20px; 
+            text-transform: uppercase; 
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); 
+            transition: 0.2s; 
+        }
+        .ptt-btn:active { 
+            transform: scale(0.95); 
+            box-shadow: 0 0 5px rgba(239, 68, 68, 0.8); 
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simulatore VHF 📻</h1>
+    <div class="subtitle">Protocollo di Emergenza MAYDAY (Ch 16)</div>
+
+    <!-- Setup Dati Imbarcazione -->
+    <div class="panel">
+        <div class="input-group">
+            <label>Nome Imbarcazione</label>
+            <input type="text" id="nome-barca" value="AURORA">
+        </div>
+        <div class="input-group">
+            <label>Call Sign / MMSI</label>
+            <input type="text" id="mmsi" value="247123456">
+        </div>
+        <div class="input-group">
+            <label>Natura dell'Emergenza</label>
+            <select id="emergenza" style="padding: 10px; border-radius: 6px; background: #0f172a; color: white; border: 1px solid #475569; width: 100%; font-size: 1rem;">
+                <option value="falla a bordo, imbarchiamo acqua">Falla a bordo (Rischio affondamento)</option>
+                <option value="incendio indomabile in sala macchine">Incendio grave</option>
+                <option value="incaglio con gravi danni allo scafo">Incaglio grave</option>
+                <option value="uomo in mare, perso contatto visivo">Uomo in mare</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Persone a Bordo (PAB)</label>
+            <input type="number" id="pab" value="5">
+        </div>
+        
+        <button class="btn-action" style="margin-top: 15px; background: #ef4444; color: white;" onclick="generaScript()">📝 Genera Messaggio Mayday</button>
+    </div>
+
+    <!-- Lettura Script -->
+    <div class="panel hidden" id="pannello-radio">
+        <h3 style="color: #ef4444;">Leggi al microfono (Canale 16)</h3>
+        
+        <div class="radio-box" id="script-radio">
+            <!-- Lo script generato va qui -->
+        </div>
+
+        <button class="ptt-btn" onclick="trasmettiAudio()">🎙️ PTT (Trasmetti)</button>
+        <p style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 10px;">Assicurati di alzare il volume del dispositivo.</p>
+    </div>
+
+    <script>
+        let messaggioSintetico = "";
+
+        function generaScript() {
+            const nome = document.getElementById('nome-barca').value.toUpperCase();
+            const mmsi = document.getElementById('mmsi').value;
+            const emergenza = document.getElementById('emergenza').value;
+            const pab = document.getElementById('pab').value;
+
+            // Generiamo coordinate fittizie plausibili nel Mediterraneo
+            const latG = Math.floor(Math.random() * (44 - 36) + 36);
+            const latM = (Math.random() * 59).toFixed(1);
+            const lonG = Math.floor(Math.random() * (15 - 8) + 8);
+            const lonM = (Math.random() * 59).toFixed(1);
+
+            const stringaLat = `${latG} gradi e ${latM} primi NORD`;
+            const stringaLon = `0 ${lonG.toString().padStart(2, '0')} gradi e ${lonM} primi EST`;
+
+            // Creazione testo formattato a video
+            const scriptHTML = `
+                <div class="script-line"><span class="highlight">MAYDAY, MAYDAY, MAYDAY</span></div>
+                <div class="script-line">Qui imbarcazione <span class="highlight">${nome}, ${nome}, ${nome}</span></div>
+                <div class="script-line">MMSI <span class="highlight">${mmsi}</span></div>
+                <br>
+                <div class="script-line"><span class="highlight">MAYDAY</span> ${nome}</div>
+                <div class="script-line">Posizione: Latitudine <span class="highlight">${stringaLat}</span>, Longitudine <span class="highlight">${stringaLon}</span></div>
+                <div class="script-line">Emergenza: <span class="highlight">${emergenza}</span></div>
+                <div class="script-line">Richiediamo assistenza immediata.</div>
+                <div class="script-line">Persone a bordo: <span class="highlight">${pab}</span>.</div>
+                <div class="script-line">Passo.</div>
+            `;
+
+            document.getElementById('script-radio').innerHTML = scriptHTML;
+            
+            // Prepariamo la stringa di testo pulita per il sintetizzatore vocale
+            messaggioSintetico = `Mayday, Mayday, Mayday. Qui imbarcazione ${nome}, ${nome}, ${nome}. MMSI ${mmsi}. Mayday ${nome}. Posizione: Latitudine ${latG} gradi e ${latM} primi Nord. Longitudine zero ${lonG} gradi e ${lonM} primi Est. Emergenza: ${emergenza}. Richiediamo assistenza immediata. Persone a bordo: ${pab}. Passo.`;
+
+            document.getElementById('pannello-radio').classList.remove('hidden');
+            
+            // Scorri automaticamente la pagina verso lo script
+            document.getElementById('pannello-radio').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function trasmettiAudio() {
+            if ('speechSynthesis' in window) {
+                // Interrompe eventuali letture precedenti
+                window.speechSynthesis.cancel(); 
+
+                const utterance = new SpeechSynthesisUtterance(messaggioSintetico);
+                utterance.lang = 'it-IT';
+                utterance.rate = 0.85; // Scandisce le parole come alla radio
+                utterance.pitch = 0.9;
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("Il tuo browser non supporta la sintesi vocale per la radio.");
+            }
+        }
+    </script>
+</body>
+</html>

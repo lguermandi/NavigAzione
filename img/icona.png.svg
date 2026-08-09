@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Sfondo circolare scuro (in tinta con la dark mode dell'app) -->
+  <circle cx="256" cy="256" r="256" fill="#0f172a"/>
+  <circle cx="256" cy="256" r="240" fill="#1e293b"/>
+
+  <!-- Mare / Onde stilizzate -->
+  <path d="M 50 400 Q 150 360 256 400 T 462 400" fill="none" stroke="#38bdf8" stroke-width="14" stroke-linecap="round"/>
+  <path d="M 100 450 Q 200 410 256 450 T 412 450" fill="none" stroke="#0284c7" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- Scafo del 420 -->
+  <path d="M 120 370 L 420 370 L 370 415 L 160 415 Z" fill="#94a3b8"/>
+  
+  <!-- Albero -->
+  <rect x="248" y="90" width="10" height="280" fill="#475569" rx="4"/>
+
+  <!-- Randa (destra) con allunamento -->
+  <path d="M 266 100 Q 420 220 430 350 L 266 350 Z" fill="#f8fafc"/>
+
+  <!-- Fiocco (sinistra) -->
+  <path d="M 238 150 L 120 350 L 238 350 Z" fill="#bae6fd"/>
+  
+  <!-- Dettagli rossi sportivi sulla randa -->
+  <path d="M 266 180 L 350 180" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 266 230 L 390 230" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
+</svg>
