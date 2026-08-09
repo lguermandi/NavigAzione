@@ -88,9 +88,14 @@
                     testo: testo
                 };
 
-                // Aggiunge in cima alla lista
+                // Aggiunge in cima alla lista e salva in locale
                 registroLog.unshift(nuovaVoce);
                 localStorage.setItem('nave_logbook', JSON.stringify(registroLog));
+
+                // INVIO AUTOMATICO AL CLOUD (se l'utente è loggato)
+                if (window.parent && window.parent.sincronizzaConCloud) {
+                    window.parent.sincronizzaConCloud('logbook', registroLog);
+                }
 
                 mostraLogbook();
                 stato.textContent = "Punto annotato con successo nel Giornale di Bordo!";

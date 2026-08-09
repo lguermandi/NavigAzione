@@ -43,7 +43,7 @@
 
     <script>
         // URL del tuo Apps Script
-        const API_URL = "IL_TUO_URL_DI_APPS_SCRIPT_QUI";
+        const API_URL = "https://script.google.com/macros/s/AKfycbz66PaHt0R7KJclqVBHGVOSGHrTBBHRGl5HKl7AarzPBa9ZcmJCYqKrHxpoSacrJBw/exec";
 
         // APPENA SI APRE IL MODULO: Controlla se c'è già una sessione attiva
         window.addEventListener('DOMContentLoaded', () => {
@@ -104,7 +104,7 @@
             }
 
             status.style.color = "#fb923c";
-            status.textContent = "Registrazione sul cloud in corso...";
+            status.textContent = "Registrazione in corso...";
 
             const hashedPassword = await sha256(pass);
 

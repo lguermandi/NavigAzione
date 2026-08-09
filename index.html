@@ -10,7 +10,7 @@
     <link rel="icon" href="img/icona.png" type="image/png">
     <link rel="apple-touch-icon" href="img/icona.png">
     
-    <!-- IDENTIFICATIVO WEB-APP (Quello che mancava!) -->
+    <!-- IDENTIFICATIVO WEB-APP -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e293b">
 </head>
@@ -42,6 +42,34 @@
 
     <script src="config.js"></script>
     <script>
+        // --- CONFIGURAZIONE CLOUD (INCOLLA QUI IL TUO URL DI APPS SCRIPT) ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbz66PaHt0R7KJclqVBHGVOSGHrTBBHRGl5HKl7AarzPBa9ZcmJCYqKrHxpoSacrJBw/exec";
+
+        // Funzione globale di sincronizzazione utilizzata dai moduli (es. Logbook, Quiz)
+        async function sincronizzaConCloud(tipoDato, contenuto) {
+            const emailUtente = localStorage.getItem('plancia_utente');
+            
+            // Se l'utente non è loggato (modalità ospite), i dati si salvano solo in locale
+            if (!emailUtente) return; 
+
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain" },
+                    body: JSON.stringify({
+                        azione: "salva_dati",
+                        email: emailUtente,
+                        tipoDato: tipoDato, 
+                        contenuto: contenuto
+                    })
+                });
+                console.log("Sincronizzazione cloud completata.");
+            } catch (e) {
+                console.log("Offline: dati salvati solo localmente.");
+            }
+        }
+        // -------------------------------------------------------------------
+
         const menuToggle = document.getElementById('menu-toggle');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebar-overlay');
