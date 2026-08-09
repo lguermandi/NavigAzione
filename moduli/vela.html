@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Puntiamo al CSS che sta nella cartella superiore -->
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <h1>Modulo Tattica e Vento</h1>
+    <div class="subtitle">Calcolo Vento Vero e Analisi Polari</div>
+
+    <div class="panel-container">
+        <!-- Pannello Vento Vero da Apparente -->
+        <div class="panel">
+            <h3>Calcolatore Vento Vero</h3>
+            
+            <div class="input-group">
+                <label>Velocità Barca (SOG - Nodi)</label>
+                <input type="number" id="sog" value="5.5" step="0.5" oninput="aggiornaDatiVela()">
+            </div>
+            
+            <div class="input-group">
+                <label>Angolo Vento Apparente (AWA - Gradi)</label>
+                <input type="number" id="awa" value="45" min="0" max="180" oninput="aggiornaDatiVela()">
+            </div>
+            
+            <div class="input-group">
+                <label>Velocità Vento Apparente (AWS - Nodi)</label>
+                <input type="number" id="aws" value="12" step="0.5" oninput="aggiornaDatiVela()">
+            </div>
+
+            <div class="results" id="risultatiVento">
+                <!-- Output calcolo vento -->
+            </div>
+        </div>
+
+        <!-- Pannello Polari e VMG -->
+        <div class="panel">
+            <h3>Analisi Polare & VMG</h3>
+            
+            <div class="input-group">
+                <label>Intensità Vento Vero (TWS - Nodi)</label>
+                <input type="number" id="tws" value="12" step="1" oninput="aggiornaDatiVela()">
+            </div>
+
+            <div class="input-group">
+                <label>Angolo Vento Vero (TWA - Gradi)</label>
+                <input type="number" id="twa" value="90" min="0" max="180" oninput="aggiornaDatiVela()">
+            </div>
+
+            <div class="results" id="risultatiPolari">
+                <!-- Output polari e VMG -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Importiamo la classe di logica vela appena creata -->
+    <script src="js/core_vela.js"></script>
+    <script>
+        // Database polare simulato (es. barca a vela / 420)
+        const polareBarca = {
+            tws: {
+                "8":  { "45": 3.8, "60": 4.2, "90": 4.9, "120": 5.2, "150": 4.5 },
+                "12": { "45": 4.5, "60": 5.1, "90": 6.8, "120": 8.5, "150": 6.2 },
+                "16": { "45": 4.8, "60": 5.6, "90": 7.5, "120": 11.0, "180": 8.0 }
+            }
+        };
+
+        function aggiornaDatiVela() {
+            // 1. Calcolo Vento Vero
+            const sog = parseFloat(document.getElementById('sog').value) || 0;
+            const awa = parseFloat(document.getElementById('awa').value) || 0;
+            const aws = parseFloat(document.getElementById('aws').value) || 0;
+
+            const ventoVero = LogicaVela.calcolaVentoVero(sog, awa, aws);
+
+            document.getElementById('risultatiVento').innerHTML = `
+                <b>Risultato Vento Vero:</b><br>
+                • Intensità Vento Vero (TWS): <span style="color:#38bdf8"><b>${ventoVero.tws} kn</b></span><br>
+                • Angolo Vento Vero (TWA): <span style="color:#38bdf8"><b>${ventoVero.twa}°</b></span>
+            `;
+
+            // 2. Calcolo Polari e VMG
+            const tws = parseFloat(document.getElementById('tws').value) || 12;
+            const twa = parseFloat(document.getElementById('twa').value) || 90;
+
+            const targetSpeed = LogicaVela.getTargetSpeed(polareBarca, tws, twa);
+            const vmg = LogicaVela.calcolaVMG(twa, targetSpeed);
+
+            document.getElementById('risultatiPolari').innerHTML = `
+                <b>Performance Teorica:</b><br>
+                • Velocità Attesa (Polare): <span style="color:#4ade80"><b>${targetSpeed} kn</b></span><br>
+                • VMG (Guadagno utile): <span style="color:#4ade80"><b>${vmg} kn</b></span><br>
+                <small style="color:#94a3b8">(Valori basati su polare di riferimento)</small>
+            `;
+        }
+
+        // Esegui all'avvio
+        aggiornaDatiVela();
+    </script>
+</body>
+</html>

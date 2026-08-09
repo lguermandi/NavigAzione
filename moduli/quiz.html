@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* Stili extra specifici per questo modulo */
+        .hidden { display: none !important; }
+        .setup-card, .result-card { text-align: center; max-width: 600px; margin: 0 auto; }
+        select { padding: 10px; border-radius: 6px; background: #0f172a; color: white; border: 1px solid #475569; font-size: 1rem; margin: 10px 0; width: 100%; }
+        .header-quiz { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #334155; }
+        .timer { font-size: 1.5rem; font-weight: bold; color: #fb923c; font-family: monospace; }
+        .nav-domande { display: flex; justify-content: space-between; margin-top: 20px; }
+        .nav-domande button { flex: 1; margin: 0 5px; }
+        .selezionata { background: #38bdf8 !important; color: #0f172a !important; border-color: #38bdf8 !important; font-weight: bold; }
+        .errore-item { text-align: left; background: #334155; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- MESSAGGIO DI CARICAMENTO -->
+    <div id="loading" style="text-align: center; margin-top: 50px;">
+        <h2 style="color: #38bdf8;">Scarico il database ministeriale... ⛵</h2>
+    </div>
+
+    <!-- STATO 1: SCHERMATA INIZIALE (SETUP) -->
+    <div id="schermata-setup" class="panel hidden setup-card">
+        <h2>Modalità di Allenamento</h2>
+        <p class="subtitle">Scegli come vuoi prepararti oggi</p>
+        
+        <div style="background: #0f172a; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="margin-bottom: 10px;">Simulazione Esame Base</h3>
+            <p style="font-size: 0.9rem; color: #94a3b8;">20 domande estratte a caso. Massimo 3 errori consentiti. Tempo: 30 minuti.</p>
+            <button class="btn-action" onclick="avviaQuiz('esame')">Inizia Simulazione</button>
+        </div>
+
+        <div style="background: #0f172a; padding: 20px; border-radius: 8px;">
+            <h3 style="margin-bottom: 10px;">Studio per Argomento</h3>
+            <select id="select-argomento">
+                <option value="">Caricamento argomenti...</option>
+            </select>
+            <button class="btn-action" style="background: #4ade80;" onclick="avviaQuiz('argomento')">Allenati sull'Argomento</button>
+        </div>
+    </div>
+
+    <!-- STATO 2: QUIZ IN CORSO -->
+    <div id="schermata-quiz" class="panel hidden" style="max-width: 700px; margin: 0 auto;">
+        <div class="header-quiz">
+            <div id="contatore-domande" style="font-weight: bold; color: #94a3b8;">Domanda 1 di 20</div>
+            <div class="timer" id="timer-display">30:00</div>
+        </div>
+
+        <div class="categoria" id="categoria-label">Categoria</div>
+        <div class="domanda" id="testo-domanda">Testo domanda...</div>
+        
+        <div class="opzioni" id="contenitore-opzioni">
+            <!-- I bottoni verranno creati da JS -->
+        </div>
+
+        <div class="nav-domande">
+            <button class="btn-action" style="background: #475569; color: white;" onclick="cambiaDomanda(-1)" id="btn-prev">⬅ Precedente</button>
+            <button class="btn-action" style="background: #475569; color: white;" onclick="cambiaDomanda(1)" id="btn-next">Successiva ➡</button>
+        </div>
+        <button class="btn-action" style="background: #ef4444; width: 100%; margin-top: 20px;" onclick="consegnaQuiz()">Consegna Esame 🏁</button>
+    </div>
+
+    <!-- STATO 3: RISULTATI -->
+    <div id="schermata-risultati" class="panel hidden result-card">
+        <h2 id="esito-titolo" style="font-size: 2rem;">Esito</h2>
+        <div class="info-box" style="font-size: 1.2rem; margin-bottom: 20px;" id="esito-punteggio">
+            Punteggio: X / Y
+        </div>
+        
+        <p id="stato-salvataggio" style="color: #fb923c; font-size: 0.9rem;">Salvataggio risultati in cloud in corso...</p>
+
+        <h3 style="margin-top: 30px; text-align: left;">I tuoi Errori:</h3>
+        <div id="lista-errori" style="max-height: 400px; overflow-y: auto;">
+            <!-- Gli errori verranno elencati qui -->
+        </div>
+
+        <button class="btn-action" style="margin-top: 20px; width: 100%;" onclick="tornaAlSetup()">Torna al Menu</button>
+    </div>
+
+
+<script>
+    // ==========================================
+    // CONFIGURAZIONE
+    // ==========================================
+    // ATTENZIONE: SOSTITUISCI QUESTO URL CON IL TUO DI GOOGLE APPS SCRIPT!
+    const API_URL = "https://script.google.com/macros/s/AKfycbz66PaHt0R7KJclqVBHGVOSGHrTBBHRGl5HKl7AarzPBa9ZcmJCYqKrHxpoSacrJBw/exec"; 
+
+    // Variabili Globali
+    let databaseGrezzo = [];
+    let argomentiDisponibili = [];
+    
+    // Variabili di Sessione Quiz
+    let domandeSessione = [];
+    let risposteUtente = {}; // id_domanda -> indice_scelto
+    let indiceCorrente = 0;
+    let modalitaAttuale = "";
+    
+    // Timer
+    let tempoRimanente = 0;
+    let timerInterval = null;
+
+    // ==========================================
+    // 1. INIZIALIZZAZIONE (Download Dati)
+    // ==========================================
+    async function inizializza() {
+        try {
+            const response = await fetch(API_URL);
+            databaseGrezzo = await response.json();
+            localStorage.setItem('db_quiz', JSON.stringify(databaseGrezzo));
+        } catch (e) {
+            console.error("Offline. Uso dati locali.");
+            databaseGrezzo = JSON.parse(localStorage.getItem('db_quiz') || "[]");
+        }
+
+        if(databaseGrezzo.length === 0) {
+            document.getElementById('loading').innerHTML = "<h2 style='color:red;'>Nessun dato trovato. Controlla Google Sheets.</h2>";
+            return;
+        }
+
+        // Estrai argomenti univoci
+        const setArgomenti = new Set();
+        databaseGrezzo.forEach(q => { if(q.argomento) setArgomenti.add(q.argomento); });
+        argomentiDisponibili = Array.from(setArgomenti).sort();
+
+        // Popola il menu a tendina
+        const select = document.getElementById('select-argomento');
+        select.innerHTML = "";
+        argomentiDisponibili.forEach(arg => {
+            select.innerHTML += `<option value="${arg}">${arg}</option>`;
+        });
+
+        // Passa allo stato 1
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('schermata-setup').classList.remove('hidden');
+    }
+
+    // ==========================================
+    // 2. LOGICA AVVIO QUIZ
+    // ==========================================
+    function avviaQuiz(modalita) {
+        modalitaAttuale = modalita;
+        risposteUtente = {};
+        indiceCorrente = 0;
+
+        if (modalita === 'esame') {
+            // Estrae 20 domande a caso
+            let mazzo = [...databaseGrezzo].sort(() => 0.5 - Math.random());
+            domandeSessione = mazzo.slice(0, 20);
+            tempoRimanente = 30 * 60; // 30 minuti in secondi
+        } else if (modalita === 'argomento') {
+            const argScelto = document.getElementById('select-argomento').value;
+            domandeSessione = databaseGrezzo.filter(q => q.argomento === argScelto);
+            // Ne prende massimo 30 per non farla troppo lunga
+            domandeSessione = domandeSessione.sort(() => 0.5 - Math.random()).slice(0, 30);
+            tempoRimanente = domandeSessione.length * 90; // 1.5 minuti a domanda
+        }
+
+        if(domandeSessione.length === 0) {
+            alert("Nessuna domanda trovata per questa selezione."); return;
+        }
+
+        // Cambio schermata e avvio timer
+        document.getElementById('schermata-setup').classList.add('hidden');
+        document.getElementById('schermata-quiz').classList.remove('hidden');
+        
+        aggiornaInterfacciaDomanda();
+        avviaTimer();
+    }
+
+    // ==========================================
+    // 3. LOGICA RUNNER (DOMANDE E RISPOSTE)
+    // ==========================================
+    function aggiornaInterfacciaDomanda() {
+        const q = domandeSessione[indiceCorrente];
+        document.getElementById('contatore-domande').textContent = `Domanda ${indiceCorrente + 1} di ${domandeSessione.length}`;
+        document.getElementById('categoria-label').textContent = `${q.sezione} - ${q.argomento}`;
+        document.getElementById('testo-domanda').textContent = q.domanda;
+
+        const contOpzioni = document.getElementById('contenitore-opzioni');
+        contOpzioni.innerHTML = "";
+
+        q.opzioni.forEach((testoOpt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-opzione';
+            // Se l'utente l'aveva già selezionata, ripristina la classe visiva
+            if(risposteUtente[q.id] === idx) btn.classList.add('selezionata');
+            
+            btn.textContent = testoOpt;
+            btn.onclick = () => selezionaRisposta(q.id, idx);
+            contOpzioni.appendChild(btn);
+        });
+
+        // Gestione bottoni prev/next
+        document.getElementById('btn-prev').disabled = (indiceCorrente === 0);
+        document.getElementById('btn-next').disabled = (indiceCorrente === domandeSessione.length - 1);
+    }
+
+    function selezionaRisposta(idDomanda, indiceRisposta) {
+        risposteUtente[idDomanda] = indiceRisposta;
+        aggiornaInterfacciaDomanda(); // Ridisegna per mostrare la selezione azzurra
+    }
+
+    function cambiaDomanda(step) {
+        indiceCorrente += step;
+        aggiornaInterfacciaDomanda();
+    }
+
+    // ==========================================
+    // 4. TIMER
+    // ==========================================
+    function avviaTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            tempoRimanente--;
+            if (tempoRimanente <= 0) {
+                clearInterval(timerInterval);
+                alert("Tempo scaduto! Il compito verrà consegnato automaticamente.");
+                consegnaQuiz();
+                return;
+            }
+            let m = Math.floor(tempoRimanente / 60).toString().padStart(2, '0');
+            let s = (tempoRimanente % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').textContent = `${m}:${s}`;
+        }, 1000);
+    }
+
+    // ==========================================
+    // 5. VALUTAZIONE E INVIO DATI A GOOGLE
+    // ==========================================
+    function consegnaQuiz() {
+        if(tempoRimanente > 0 && Object.keys(risposteUtente).length < domandeSessione.length) {
+            if(!confirm("Non hai risposto a tutte le domande. Sicuro di voler consegnare?")) return;
+        }
+
+        clearInterval(timerInterval);
+        let punteggio = 0;
+        let listaErroriHTML = "";
+        let idErroriPerCloud = [];
+
+        domandeSessione.forEach(q => {
+            const rspData = risposteUtente[q.id];
+            const rspCorretta = parseInt(q.rispostaCorretta);
+
+            if (rspData === rspCorretta) {
+                punteggio++;
+            } else {
+                idErroriPerCloud.push(q.id);
+                // Crea il box dell'errore
+                const testoData = rspData !== undefined ? q.opzioni[rspData] : "<i>Nessuna risposta data</i>";
+                const testoEsatta = q.opzioni[rspCorretta];
+                
+                listaErroriHTML += `
+                    <div class="errore-item">
+                        <b style="color:#f87171;">Q: ${q.domanda}</b><br>
+                        <span style="color:#94a3b8;">Tua risposta:</span> ${testoData}<br>
+                        <span style="color:#4ade80;">Risposta esatta:</span> ${testoEsatta}<br>
+                        <small style="color:#fb923c; margin-top:5px; display:block;">ℹ️ ${q.spiegazione}</small>
+                    </div>
+                `;
+            }
+        });
+
+        // Definisci l'esito
+        const limiteErrori = modalitaAttuale === 'esame' ? 3 : Math.floor(domandeSessione.length * 0.2);
+        const erroriFatti = domandeSessione.length - punteggio;
+        const promosso = erroriFatti <= limiteErrori;
+
+        document.getElementById('esito-titolo').textContent = promosso ? "COMPLIMENTI! IDONEO 🟢" : "BOCCIATO 🔴";
+        document.getElementById('esito-titolo').style.color = promosso ? "#4ade80" : "#ef4444";
+        document.getElementById('esito-punteggio').textContent = `Punteggio: ${punteggio} su ${domandeSessione.length} (Errori: ${erroriFatti})`;
+        document.getElementById('lista-errori').innerHTML = erroriFatti === 0 ? "<p style='color:#4ade80'>Percorso netto! Nessun errore.</p>" : listaErroriHTML;
+
+        // Cambio Schermata
+        document.getElementById('schermata-quiz').classList.add('hidden');
+        document.getElementById('schermata-risultati').classList.remove('hidden');
+
+        // INVIA DATI AL FOGLIO GOOGLE IN BACKGROUND
+        salvaInCloud(modalitaAttuale, `${punteggio}/${domandeSessione.length}`, promosso ? "Idoneo" : "Bocciato", idErroriPerCloud.join(", "));
+    }
+
+    async function salvaInCloud(mod, punt, esito, errTxt) {
+        const payload = {
+            modalita: mod === 'esame' ? "Simulazione Esame Base" : "Argomento",
+            punteggio: punt,
+            esito: esito,
+            errori: errTxt
+        };
+
+        try {
+            const resp = await fetch(API_URL, {
+                method: 'POST',
+                // Text/plain previene errori CORS nei vecchi browser, Apps Script fa il parse manualmente
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payload)
+            });
+            document.getElementById('stato-salvataggio').textContent = "✔ Risultati salvati nello Storico Cloud.";
+            document.getElementById('stato-salvataggio').style.color = "#4ade80";
+        } catch (e) {
+            document.getElementById('stato-salvataggio').textContent = "❌ Errore di connessione. Dati salvati solo in locale.";
+            document.getElementById('stato-salvataggio').style.color = "#ef4444";
+        }
+    }
+
+    function tornaAlSetup() {
+        document.getElementById('schermata-risultati').classList.add('hidden');
+        document.getElementById('schermata-setup').classList.remove('hidden');
+    }
+
+    // Boot
+    inizializza();
+</script>
+
+</body>
+</html>

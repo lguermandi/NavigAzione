@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Puntiamo al CSS che sta nella cartella superiore -->
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <h1>Simulatore Vettoriale di Rotta</h1>
+    
+    <div class="container">
+        <!-- Pannello Controlli -->
+        <div class="panel">
+            <h3>Parametri di Navigazione</h3>
+            
+            <div class="input-group">
+                <label>Prora Vera (Pv - Gradi 0-360)</label>
+                <input type="number" id="pv" value="45" min="0" max="360" oninput="aggiornaSimulazione()">
+            </div>
+            
+            <div class="input-group">
+                <label>Scarroccio (+ Dritta, - Sinistra)</label>
+                <input type="number" id="scarroccio" value="5" min="-30" max="30" oninput="aggiornaSimulazione()">
+            </div>
+            
+            <div class="input-group">
+                <label>Velocità Propulsiva (Kn)</label>
+                <input type="number" id="vp" value="6" min="0" max="30" step="0.5" oninput="aggiornaSimulazione()">
+            </div>
+
+            <div class="input-group">
+                <label>Direzione Corrente (Dc - Gradi 0-360)</label>
+                <input type="number" id="dc" value="135" min="0" max="360" oninput="aggiornaSimulazione()">
+            </div>
+
+            <div class="input-group">
+                <label>Velocità Corrente (Vc - Kn)</label>
+                <input type="number" id="vc" value="2" min="0" max="10" step="0.5" oninput="aggiornaSimulazione()">
+            </div>
+
+            <div class="results" id="outputRisultati">
+                <!-- I risultati testuali compariranno qui -->
+            </div>
+        </div>
+
+        <!-- Pannello Grafico (Canvas) -->
+        <div class="panel" style="width: 420px; display: flex; flex-direction: column; align-items: center;">
+            <h3>Rappresentazione Vettoriale</h3>
+            <canvas id="canvasRotte" width="380" height="380"></canvas>
+        </div>
+    </div>
+
+<script>
+    // Inseriamo la logica vettoriale creata prima
+    class VectorMath {
+        static toRadians(deg) { return deg * (Math.PI / 180); }
+        static toDegrees(rad) { 
+            let deg = rad * (180 / Math.PI);
+            return ((deg % 360) + 360) % 360;
+        }
+        static calcolaRvVeff(rs, vp, dc, vc) {
+            const rsRad = this.toRadians(rs);
+            const barcaX = vp * Math.sin(rsRad);
+            const barcaY = vp * Math.cos(rsRad);
+
+            const dcRad = this.toRadians(dc);
+            const corrX = vc * Math.sin(dcRad);
+            const corrY = vc * Math.cos(dcRad);
+
+            const resX = barcaX + corrX;
+            const resY = barcaY + corrY;
+
+            const veff = Math.sqrt(Math.pow(resX, 2) + Math.pow(resY, 2));
+            const rvRad = Math.atan2(resX, resY);
+            const rv = this.toDegrees(rvRad);
+
+            return {
+                rv: Math.round(rv * 10) / 10,
+                veff: Math.round(veff * 10) / 10,
+                vector: { x: resX, y: resY },
+                barcaVector: { x: barcaX, y: barcaY },
+                corrVector: { x: corrX, y: corrY }
+            };
+        }
+        static calcolaRs(pv, lsc) {
+            return ((pv + lsc) % 360 + 360) % 360;
+        }
+    }
+
+    const canvas = document.getElementById('canvasRotte');
+    const ctx = canvas.getContext('2d');
+
+    function disegnaFreccia(fromX, fromY, toX, toY, colore, spessore = 2, testo = "") {
+        ctx.strokeStyle = colore;
+        ctx.fillStyle = colore;
+        ctx.lineWidth = spessore;
+        
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+
+        // Disegna la punta della freccia
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+        ctx.beginPath();
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - 10 * Math.cos(angle - Math.PI / 6), toY - 10 * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(toX - 10 * Math.cos(angle + Math.PI / 6), toY - 10 * Math.sin(angle + Math.PI / 6));
+        ctx.lineTo(toX, toY);
+        ctx.fill();
+
+        if (testo) {
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "12px Arial";
+            ctx.fillText(testo, toX + 5, toY - 5);
+        }
+    }
+
+    function aggiornaSimulazione() {
+        // 1. Lettura input
+        const pv = parseFloat(document.getElementById('pv').value) || 0;
+        const scarroccio = parseFloat(document.getElementById('scarroccio').value) || 0;
+        const vp = parseFloat(document.getElementById('vp').value) || 0;
+        const dc = parseFloat(document.getElementById('dc').value) || 0;
+        const vc = parseFloat(document.getElementById('vc').value) || 0;
+
+        // 2. Calcoli
+        const rs = VectorMath.calcolaRs(pv, scarroccio);
+        const res = VectorMath.calcolaRvVeff(rs, vp, dc, vc);
+
+        // 3. Output testuale
+        document.getElementById('outputRisultati').innerHTML = `
+            <b>Risultati del Calcolo:</b><br>
+            • Rotta di Superficie (Rs): <b>${rs}°</b><br>
+            • Rotta Vera (Rv): <span style="color:#38bdf8"><b>${res.rv}°</b></span><br>
+            • Velocità Effettiva (Veff): <span style="color:#38bdf8"><b>${res.veff} kn</b></span>
+        `;
+
+        // 4. Disegno su Canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const scala = 20; // Pixel per nodo
+
+        // Griglia di orientamento (Nord in alto)
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 100, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        // Disegno Nord (Testo)
+        ctx.fillStyle = '#64748b';
+        ctx.font = "10px Arial";
+        ctx.fillText("N (0°)", centerX - 12, centerY - 105);
+
+        // Calcolo coordinate finali dei vettori sul canvas (Invertendo Y per lo schermo)
+        // Barca Vector (Punto di arrivo teorico senza corrente)
+        const barcaCanvasX = centerX + (res.barcaVector.x * scala);
+        const barcaCanvasY = centerY - (res.barcaVector.y * scala);
+
+        // Vettore Corrente (spostamento applicato)
+        // Per visualizzare il triangolo di correnti in coda alla barca o dall'origine:
+        // Tracciamo la corrente a partire dall'origine o dal punto barca
+        const corrCanvasX = centerX + (res.corrVector.x * scala);
+        const corrCanvasY = centerY - (res.corrVector.y * scala);
+
+        // Vettore Risultante (Rotta Vera)
+        const resCanvasX = centerX + (res.vector.x * scala);
+        const resCanvasY = centerY - (res.vector.y * scala);
+
+        // Vettore Barca (Giallo/Arancio)
+        disegnaFreccia(centerX, centerY, barcaCanvasX, barcaCanvasY, '#fb923c', 2, "Prora/Superficie");
+
+        // Vettore Corrente (Blu/Azzurro) - lo disegniamo a partire dalla punta della barca per chiudere il triangolo didattico
+        disegnaFreccia(barcaCanvasX, barcaCanvasY, resCanvasX, resCanvasY, '#38bdf8', 2, "Corrente");
+
+        // Vettore Risultante Finale - Rotta Vera (Verde) dall'origine alla destinazione effettiva
+        disegnaFreccia(centerX, centerY, resCanvasX, resCanvasY, '#4ade80', 3, "Rotta Vera (Rv)");
+
+        // Punto di partenza (Barca)
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 4, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
+    // Esegui all'avvio
+    aggiornaSimulazione();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plancia di Comando Nautica</title>
+    
+    <!-- Colleghiamo il CSS e il file di Configurazione -->
+    <link rel="stylesheet" href="css/style.css">
+    <script src="config.js"></script>
+
+    <!-- INIZIO CODICE PWA (App Offline) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3143/3143621.png">
+    <!-- FINE CODICE PWA -->
+</head>
+<body>
+
+    <header>
+        <div class="logo">⛵ Plancia di Comando</div>
+        <nav id="menu-navigazione">
+            <!-- I bottoni verranno creati qui automaticamente dallo script -->
+        </nav>
+    </header>
+
+    <main>
+        <!-- L'iframe è lo "schermo" dove vengono proiettati i vari moduli -->
+        <iframe id="app-frame" src="moduli/home.html"></iframe>
+    </main>
+
+<script>
+    // Questo script costruisce il menu leggendo l'array APP_MODULI in config.js
+    const menu = document.getElementById('menu-navigazione');
+    const iframe = document.getElementById('app-frame');
+
+    APP_MODULI.forEach((modulo, index) => {
+        const btn = document.createElement('button');
+        // Aggiunge la classe 'active' solo al primo bottone (Home)
+        btn.className = 'nav-btn' + (index === 0 ? ' active' : '');
+        btn.innerHTML = `${modulo.icona} ${modulo.titolo}`;
+        
+        btn.onclick = () => {
+            // Rimuove 'active' da tutti i bottoni
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            // Lo aggiunge al bottone appena cliccato
+            btn.classList.add('active');
+            // Dice all'iframe di caricare il file corrispondente a quel modulo
+            iframe.src = modulo.file;
+        };
+        
+        menu.appendChild(btn);
+    });
+</script>
+
+<!-- INIZIO REGISTRAZIONE SERVICE WORKER (Per il funzionamento offline) -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker pronto! App funzionante offline.', reg))
+                .catch(err => console.error('Errore Service Worker', err));
+        });
+    }
+</script>
+<!-- FINE REGISTRAZIONE SERVICE WORKER -->
+
+</body>
+</html>

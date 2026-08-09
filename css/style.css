@@ -1,0 +1,45 @@
+/* ========================================= */
+/* 1. STILI IMPALCATURA (INDEX.HTML)         */
+/* ========================================= */
+body { font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+header { background: #1e293b; width: 100%; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); box-sizing: border-box; }
+.logo { font-size: 1.2rem; font-weight: bold; color: #38bdf8; }
+nav { display: flex; gap: 15px; flex-wrap: wrap; }
+.nav-btn { background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+.nav-btn:hover, .nav-btn.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; font-weight: bold; }
+main { width: 100%; max-width: 1000px; padding: 20px; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; flex-grow: 1; }
+iframe { width: 100%; height: 650px; border: none; border-radius: 12px; background: #1e293b; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+
+/* ========================================= */
+/* 2. STILI COMUNI DEI SOTTOMODULI           */
+/* ========================================= */
+h1, h2, h3 { color: #38bdf8; margin-top: 0; }
+.subtitle, .stats { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; text-align: center;}
+.panel-container, .layout-mappa { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; padding: 20px 0; }
+.panel, .panel-mappa, .quiz-container { background: #1e293b; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); box-sizing: border-box; }
+.input-group { margin-bottom: 12px; display: flex; flex-direction: column; }
+label { font-size: 0.85rem; margin-bottom: 4px; color: #94a3b8; }
+input { padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 1rem; }
+.results, .info-box { margin-top: 15px; padding: 15px; background: #0f172a; border-radius: 6px; border-left: 4px solid #38bdf8; line-height: 1.5; }
+
+/* ========================================= */
+/* 3. STILI SPECIFICI: QUIZ                  */
+/* ========================================= */
+.categoria { display: inline-block; background: #334155; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; margin-bottom: 15px; text-transform: uppercase; }
+.domanda { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.4; }
+.opzioni { display: flex; flex-direction: column; gap: 10px; }
+.btn-opzione { background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 15px; border-radius: 8px; text-align: left; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+.btn-opzione:hover:not(:disabled) { background: #1e293b; border-color: #38bdf8; }
+.corretta { background: #166534 !important; border-color: #4ade80 !important; }
+.errata { background: #7f1d1d !important; border-color: #f87171 !important; }
+.feedback-box { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; line-height: 1.4; }
+.feedback-corretto { background: #064e3b; border-left: 4px solid #4ade80; display: block; }
+.feedback-errato { background: #450a0a; border-left: 4px solid #f87171; display: block; }
+.btn-next, .btn-action { background: #38bdf8; color: #0f172a; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 20px;}
+.btn-next { width: 100%; display: none; }
+
+/* ========================================= */
+/* 4. STILI SPECIFICI: MAPPA                 */
+/* ========================================= */
+#map { width: 550px; height: 480px; border-radius: 10px; border: 2px solid #334155; }
+.btn-reset { background: #ef4444; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px;}
