@@ -3,13 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Puntiamo al CSS che sta nella cartella superiore -->
+    <!-- ECCO LA RIGA MANCANTE CHE RIPRISTINA LA GRAFICA -->
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-    <div class="home-card">
-        <h2>Benvenuto a bordo, Marinaio!</h2>
-        <p>Il sistema architetturale avanzato è ora online.<br>Seleziona un modulo dal menu di comando in alto per iniziare la navigazione o lo studio.</p>
+    
+    <h1>Dashboard Operativa 🧭</h1>
+    <div class="subtitle" style="margin-bottom: 25px;">Stato del sistema e pianificazione rotte</div>
+
+    <!-- Sezione Patente -->
+    <div class="panel" style="border-left: 4px solid #f59e0b;">
+        <h3 style="color: #f59e0b; margin-top: 0;">Integrazione Patente Nautica</h3>
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <span style="color: #94a3b8; font-size: 0.9rem;">Obiettivo Esame</span><br>
+                <b style="font-size: 1.2rem;">Senza Limiti</b>
+            </div>
+            <div>
+                <span style="color: #94a3b8; font-size: 0.9rem;">Analisi Deriva/Scarroccio</span><br>
+                <b style="font-size: 1.2rem; color: #4ade80;">Operativo</b>
+            </div>
+            <div>
+                <span style="color: #94a3b8; font-size: 0.9rem;">Simulatore COLREGs</span><br>
+                <b style="font-size: 1.2rem; color: #4ade80;">Operativo</b>
+            </div>
+        </div>
     </div>
+
+    <!-- Sezione Crociera -->
+    <div class="panel" style="border-left: 4px solid #38bdf8;">
+        <h3 style="color: #38bdf8; margin-top: 0;">Pianificazione Crociera (Estate 2027)</h3>
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <span style="color: #94a3b8; font-size: 0.9rem;">Destinazione</span><br>
+                <b style="font-size: 1.2rem;">Mediterraneo</b>
+            </div>
+            <div>
+                <span style="color: #94a3b8; font-size: 0.9rem;">Equipaggio</span><br>
+                <b style="font-size: 1.2rem;">5 Membri</b>
+            </div>
+            <div>
+                <span style="color: #94a3b8; font-size: 0.9rem;">Passage Plan PDF</span><br>
+                <b style="font-size: 1.2rem; color: #38bdf8;">Attivo</b>
+            </div>
+        </div>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 15px; border-top: 1px solid #334155; padding-top: 10px;">
+            Usa il menu laterale (☰) per accedere alla cartografia, interrogare il meteo e testare i calcolatori di autonomia e polari 420.
+        </p>
+    </div>
+
 </body>
 </html>

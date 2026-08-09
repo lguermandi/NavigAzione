@@ -1,45 +1,226 @@
 /* ========================================= */
-/* 1. STILI IMPALCATURA (INDEX.HTML)         */
+/* 1. LAYOUT PRINCIPALE E MENU (INDEX.HTML)  */
 /* ========================================= */
-body { font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-header { background: #1e293b; width: 100%; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); box-sizing: border-box; }
-.logo { font-size: 1.2rem; font-weight: bold; color: #38bdf8; }
-nav { display: flex; gap: 15px; flex-wrap: wrap; }
-.nav-btn { background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
-.nav-btn:hover, .nav-btn.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; font-weight: bold; }
-main { width: 100%; max-width: 1000px; padding: 20px; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; flex-grow: 1; }
-iframe { width: 100%; height: 650px; border: none; border-radius: 12px; background: #1e293b; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+body { 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    background-color: #0f172a; 
+    color: #f8fafc; 
+    display: flex; 
+    flex-direction: column; 
+    min-height: 100vh; 
+}
+
+/* Barra Superiore */
+.topbar { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 15px 20px; 
+    background-color: #1e293b; 
+    border-bottom: 2px solid #334155; 
+    position: sticky; 
+    top: 0; 
+    z-index: 1001; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+.logo-title { font-size: 1.2rem; font-weight: bold; color: #38bdf8; }
+.hamburger { background: none; border: none; color: #f8fafc; font-size: 1.8rem; cursor: pointer; padding: 0; }
+
+/* Menu Laterale a Scomparsa */
+.sidebar { 
+    position: fixed; 
+    top: 0; 
+    left: -300px; 
+    width: 280px; 
+    height: 100vh; 
+    background-color: #1e293b; 
+    box-shadow: 4px 0 15px rgba(0,0,0,0.5); 
+    transition: left 0.3s ease; 
+    z-index: 1000; 
+    display: flex; 
+    flex-direction: column; 
+    padding-top: 70px; 
+    overflow-y: auto; 
+}
+.sidebar.open { left: 0; }
+.sidebar-header { 
+    padding: 0 20px 15px; 
+    border-bottom: 1px solid #334155; 
+    margin-bottom: 15px; 
+    color: #94a3b8; 
+    font-size: 0.9rem; 
+    text-transform: uppercase; 
+}
+
+/* Oscuramento sfondo quando il menu è aperto */
+.sidebar-overlay { 
+    display: none; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh; 
+    background: rgba(0, 0, 0, 0.6); 
+    backdrop-filter: blur(2px); 
+    z-index: 999; 
+}
+.sidebar-overlay.open { display: block; }
+
+/* Bottoni del Menu */
+.menu-btn { 
+    background: transparent; 
+    border: none; 
+    color: #f8fafc; 
+    padding: 15px 20px; 
+    text-align: left; 
+    font-size: 1.1rem; 
+    width: 100%; 
+    cursor: pointer; 
+    transition: 0.2s; 
+    border-left: 4px solid transparent; 
+}
+.menu-btn:hover { background-color: #334155; color: #38bdf8; border-left-color: #38bdf8; }
+
+/* Contenitore dove si caricano i moduli */
+.main-content { 
+    padding: 20px; 
+    flex-grow: 1; 
+    max-width: 1000px; 
+    margin: 0 auto; 
+    width: 100%; 
+    box-sizing: border-box; 
+}
 
 /* ========================================= */
 /* 2. STILI COMUNI DEI SOTTOMODULI           */
 /* ========================================= */
 h1, h2, h3 { color: #38bdf8; margin-top: 0; }
-.subtitle, .stats { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; text-align: center;}
-.panel-container, .layout-mappa { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; padding: 20px 0; }
-.panel, .panel-mappa, .quiz-container { background: #1e293b; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); box-sizing: border-box; }
-.input-group { margin-bottom: 12px; display: flex; flex-direction: column; }
-label { font-size: 0.85rem; margin-bottom: 4px; color: #94a3b8; }
-input { padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 1rem; }
-.results, .info-box { margin-top: 15px; padding: 15px; background: #0f172a; border-radius: 6px; border-left: 4px solid #38bdf8; line-height: 1.5; }
+.subtitle, .stats { font-size: 0.95rem; color: #94a3b8; margin-bottom: 20px; text-align: center;}
+
+/* Pannelli e Contenitori */
+.panel-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; padding: 10px 0; }
+.panel, .quiz-container { 
+    background: #1e293b; 
+    padding: 20px; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+    box-sizing: border-box; 
+    width: 100%; 
+    margin-bottom: 20px;
+}
+
+/* Input e Form */
+.input-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+label { font-size: 0.85rem; margin-bottom: 5px; color: #94a3b8; }
+input { 
+    padding: 10px; 
+    border-radius: 6px; 
+    border: 1px solid #475569; 
+    background: #0f172a; 
+    color: white; 
+    font-size: 1rem; 
+    width: 100%; 
+    box-sizing: border-box;
+}
+
+/* Riquadri Risultati (Es. Vento Vero, Motore) */
+.results, .info-box { 
+    margin-top: 15px; 
+    padding: 15px; 
+    background: #0f172a; 
+    border-radius: 6px; 
+    border-left: 4px solid #38bdf8; 
+    line-height: 1.5; 
+}
+
+/* Bottoni Azione (Calcola, Esporta, etc.) */
+.btn-action { 
+    background: #38bdf8; 
+    color: #0f172a; 
+    border: none; 
+    padding: 12px 20px; 
+    border-radius: 8px; 
+    font-size: 1rem; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: background 0.2s; 
+    display: inline-block;
+}
+.btn-action:hover { background: #0284c7; color: #fff; }
+.hidden { display: none !important; }
 
 /* ========================================= */
-/* 3. STILI SPECIFICI: QUIZ                  */
+/* 3. STILI SPECIFICI: QUIZ E FANALI         */
 /* ========================================= */
-.categoria { display: inline-block; background: #334155; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; margin-bottom: 15px; text-transform: uppercase; }
+.categoria { 
+    display: inline-block; 
+    background: #334155; 
+    padding: 4px 10px; 
+    border-radius: 12px; 
+    font-size: 0.8rem; 
+    margin-bottom: 15px; 
+    text-transform: uppercase; 
+}
 .domanda { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.4; }
 .opzioni { display: flex; flex-direction: column; gap: 10px; }
-.btn-opzione { background: #0f172a; color: #f8fafc; border: 1px solid #475569; padding: 15px; border-radius: 8px; text-align: left; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+
+.btn-opzione { 
+    background: #0f172a; 
+    color: #f8fafc; 
+    border: 1px solid #475569; 
+    padding: 15px; 
+    border-radius: 8px; 
+    text-align: left; 
+    font-size: 1rem; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    width: 100%;
+}
 .btn-opzione:hover:not(:disabled) { background: #1e293b; border-color: #38bdf8; }
+
+/* Colori Feedback Risposte */
 .corretta { background: #166534 !important; border-color: #4ade80 !important; }
-.errata { background: #7f1d1d !important; border-color: #f87171 !important; }
+.errata { background: #7f1d1d !important; border-color: #ef4444 !important; }
+
 .feedback-box { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; line-height: 1.4; }
 .feedback-corretto { background: #064e3b; border-left: 4px solid #4ade80; display: block; }
-.feedback-errato { background: #450a0a; border-left: 4px solid #f87171; display: block; }
-.btn-next, .btn-action { background: #38bdf8; color: #0f172a; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 20px;}
-.btn-next { width: 100%; display: none; }
+.feedback-errato { background: #450a0a; border-left: 4px solid #ef4444; display: block; }
+
+.btn-next { 
+    background: #38bdf8; 
+    color: #0f172a; 
+    border: none; 
+    padding: 12px 20px; 
+    border-radius: 8px; 
+    font-size: 1rem; 
+    font-weight: bold; 
+    cursor: pointer; 
+    margin-top: 20px; 
+    width: 100%; 
+    display: none; 
+}
 
 /* ========================================= */
-/* 4. STILI SPECIFICI: MAPPA                 */
+/* 4. STILI SPECIFICI: MAPPA, PDF E TABELLE  */
 /* ========================================= */
-#map { width: 550px; height: 480px; border-radius: 10px; border: 2px solid #334155; }
-.btn-reset { background: #ef4444; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px;}
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 15px; 
+}
+th, td { 
+    border: 1px solid #334155; 
+    padding: 10px; 
+    text-align: center; 
+}
+th { background-color: #0f172a; color: #94a3b8; font-size: 0.9rem; }
+td { font-size: 0.95rem; }
+
+/* Adattamenti per il mobile piccoli schermi */
+@media (max-width: 600px) {
+    .btn-action { width: 100%; margin-bottom: 10px; }
+    .panel { padding: 15px; }
+    h1 { font-size: 1.5rem; }
+}

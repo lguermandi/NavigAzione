@@ -5,135 +5,286 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../css/style.css">
     
-    <!-- Librerie CSS e JS di Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
+        #foglio-pdf {
+            background: #ffffff; 
+            color: #000000;      
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
         #mappa-container { 
             height: 500px; 
             width: 100%; 
-            border-radius: 8px; 
-            border: 2px solid #334155; 
+            border: 2px solid #0f172a; 
             z-index: 1;
-            cursor: crosshair; /* Cambia il cursore per far capire che si può cliccare */
-        }
-        .dashboard-rotta {
-            background: #0f172a;
-            padding: 15px;
-            border-radius: 8px;
+            cursor: crosshair;
             margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            position: relative;
         }
-        .dato-rotta {
-            font-size: 1.5rem;
-            color: #38bdf8;
+
+        .etichetta-reticolo {
+            color: #0f172a;
+            font-size: 11px;
             font-weight: bold;
+            font-family: monospace;
+            text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+            pointer-events: none;
+            white-space: nowrap;
         }
+
+        .tabella-rotta {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+        .tabella-rotta th, .tabella-rotta td {
+            border: 1px solid #94a3b8;
+            padding: 6px;
+            text-align: center;
+        }
+        .tabella-rotta th { background: #e2e8f0; font-weight: bold; }
+
+        .titolo-pdf { font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; color: #0f172a; }
+        .sottotitolo-pdf { font-size: 0.9rem; color: #475569; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <h1>Mappa & Rotte 🌍</h1>
-    <div class="subtitle">Plotter Cartografico e Calcolo Distanze</div>
-
-    <!-- Pannello di controllo superiore -->
-    <div class="dashboard-rotta">
-        <div>
-            <span style="color: #94a3b8; font-size: 0.9rem;">Distanza Totale Rotta</span><br>
-            <span class="dato-rotta" id="distanza-totale">0.00</span> <span style="color: #38bdf8;">Nm</span>
-        </div>
-        <div>
-            <button class="btn-action" style="background: #ef4444; padding: 10px 20px; font-size: 0.9rem;" onclick="cancellaRotta()">Cestina Rotta</button>
-        </div>
+    <h1>Pianificazione Rotta 🌍</h1>
+    
+    <div class="panel" style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button class="btn-action" style="background: #ef4444;" onclick="cancellaRotta()">🗑️ Cestina Rotta</button>
+        <button class="btn-action" style="background: #38bdf8; color: #0f172a; font-weight: bold;" onclick="esportaPDF()">📥 Esporta Passage Plan (PDF)</button>
     </div>
 
-    <!-- Contenitore Mappa -->
-    <div class="panel">
+    <!-- INIZIO FOGLIO DA STAMPARE -->
+    <div id="foglio-pdf">
+        <div class="titolo-pdf">Passage Plan & Navigational Chart</div>
+        <div class="sottotitolo-pdf">
+            Distanza Totale Stimata: <b id="distanza-totale">0.00</b> Nm | 
+            Equipaggio: 5 | 
+            Unità: Barca a Vela |
+            Declinazione (<span id="anno-declinazione"></span>): <b id="valore-declinazione"></b>° E
+        </div>
+
         <div id="mappa-container"></div>
-        <p style="color: #94a3b8; font-size: 0.85rem; text-align: center; margin-top: 10px;">
-            ℹ️ Clicca in sequenza sulla mappa per tracciare i waypoint.
-        </p>
+
+        <table class="tabella-rotta">
+            <thead>
+                <tr>
+                    <th>WP</th>
+                    <th>Latitudine</th>
+                    <th>Longitudine</th>
+                    <th>Tratta (Nm)</th>
+                    <th>Prog. (Nm)</th>
+                    <th style="background:#bae6fd;">Rv</th>
+                    <th style="background:#bbf7d0;">Rm</th>
+                </tr>
+            </thead>
+            <tbody id="corpo-tabella">
+                <!-- Dati inseriti dinamicamente -->
+            </tbody>
+        </table>
     </div>
 
     <script>
-        // Inizializza mappa (Centrata sul Mediterraneo Occidentale)
-        const map = L.map('mappa-container').setView([40.5, 6.0], 6);
+        // 1. FORZATURA SCALA LEAFLET IN MIGLIA NAUTICHE
+        L.Control.Scale.include({
+            _updateMetric: function (maxMeters) {
+                const maxNm = maxMeters / 1852;
+                const nm = this._getRoundNum(maxNm);
+                const label = nm + ' Nm';
+                this._updateScale(this._mScale, label, (nm * 1852) / maxMeters);
+            }
+        });
 
-        // Livello Base (Coste e Città)
+        const map = L.map('mappa-container').setView([44.0, 12.7], 9);
+        L.control.scale({ maxWidth: 200, metric: true, imperial: false }).addTo(map);
+        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
-
-        // Livello Nautico (Fari, Boe, Batimetriche)
         L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
-        // VARIABILI PER LA ROTTA
-        let arrayWaypoint = []; // Salva le coordinate dei click
-        let lineaRotta = null;  // L'oggetto "linea rossa" disegnata sulla mappa
-        let totaleMetri = 0;
+        // 2. SISTEMA RETICOLO GEOGRAFICO CON GRADI, MINUTI E SECONDI (GMS)
+        let reticoloLayer = null;
 
-        // FUNZIONE: Clic sulla mappa
+        function formattaGradi(gradi, asse) {
+            let dir = asse === 'lat' ? (gradi >= 0 ? 'N' : 'S') : (gradi >= 0 ? 'E' : 'W');
+            let abs = Math.abs(gradi);
+            
+            // 1. Gradi
+            let d = Math.floor(abs);
+            
+            // 2. Minuti interi
+            let restanti = (abs - d) * 60;
+            let m = Math.floor(restanti);
+            
+            // 3. Secondi (con un decimale)
+            let s = ((restanti - m) * 60).toFixed(1);
+            
+            // Aggiunge gli zeri per formattazione (es. da "5" a "05")
+            let mStr = m.toString().padStart(2, '0');
+            let sStr = s < 10 ? "0" + s : s;
+            
+            return `${d}° ${mStr}' ${sStr}" ${dir}`;
+        }
+
+        function disegnaReticolo() {
+            if (reticoloLayer) map.removeLayer(reticoloLayer);
+            reticoloLayer = L.layerGroup().addTo(map);
+            
+            const bounds = map.getBounds();
+            const zoom = map.getZoom();
+            
+            let interval = 0.5; 
+            if (zoom > 11) interval = 0.0833;      
+            else if (zoom > 9) interval = 0.1666;  
+            else if (zoom > 7) interval = 0.5;     
+            else interval = 2;                     
+
+            const latMin = Math.floor(bounds.getSouth() / interval) * interval;
+            const latMax = Math.ceil(bounds.getNorth() / interval) * interval;
+            const lngMin = Math.floor(bounds.getWest() / interval) * interval;
+            const lngMax = Math.ceil(bounds.getEast() / interval) * interval;
+
+            for (let lat = latMin; lat <= latMax; lat += interval) {
+                L.polyline([[lat, lngMin], [lat, lngMax]], { color: '#64748b', weight: 1, opacity: 0.6 }).addTo(reticoloLayer);
+                L.marker([lat, bounds.getWest() + (bounds.getEast()-bounds.getWest())*0.02], {
+                    icon: L.divIcon({ className: 'etichetta-reticolo', html: formattaGradi(lat, 'lat'), iconSize: [90, 20], iconAnchor: [0, 10] })
+                }).addTo(reticoloLayer);
+            }
+
+            for (let lng = lngMin; lng <= lngMax; lng += interval) {
+                L.polyline([[latMin, lng], [latMax, lng]], { color: '#64748b', weight: 1, opacity: 0.6 }).addTo(reticoloLayer);
+                L.marker([bounds.getNorth() - (bounds.getNorth()-bounds.getSouth())*0.05, lng], {
+                    icon: L.divIcon({ className: 'etichetta-reticolo', html: formattaGradi(lng, 'lng'), iconSize: [90, 20], iconAnchor: [45, 0] })
+                }).addTo(reticoloLayer);
+            }
+        }
+
+        map.on('moveend zoomend', disegnaReticolo);
+        setTimeout(disegnaReticolo, 500);
+
+        // 3. LOGICA ROTTE E CALCOLI
+        let arrayWaypoint = [];
+        let lineaRotta = null;
+        let totaleMiglia = 0;
+
+        const toRad = deg => deg * Math.PI / 180;
+        const toDeg = rad => rad * 180 / Math.PI;
+
+        function calcolaBearing(lat1, lon1, lat2, lon2) {
+            const phi1 = toRad(lat1);
+            const phi2 = toRad(lat2);
+            const deltaLambda = toRad(lon2 - lon1);
+            const y = Math.sin(deltaLambda) * Math.cos(phi2);
+            const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda);
+            let bearing = toDeg(Math.atan2(y, x));
+            return (bearing + 360) % 360;
+        }
+
+        function calcolaDeclinazione() {
+            const annoCorrente = new Date().getFullYear();
+            const annoRif = 2020;
+            const declRif = 3.0; 
+            const variazioneAnnua = 0.1; 
+            const declinazioneAttuale = declRif + ((annoCorrente - annoRif) * variazioneAnnua);
+            
+            document.getElementById('anno-declinazione').textContent = annoCorrente;
+            document.getElementById('valore-declinazione').textContent = declinazioneAttuale.toFixed(1);
+            return declinazioneAttuale;
+        }
+
         map.on('click', function(e) {
             const lat = e.latlng.lat;
             const lng = e.latlng.lng;
-            
-            // Aggiungi il nuovo punto all'array
             arrayWaypoint.push([lat, lng]);
             
-            // Metti un marcatore (il pallino) sul punto cliccato
-            L.circleMarker([lat, lng], {
-                radius: 5,
-                color: '#ef4444',
-                fillOpacity: 1
-            }).addTo(map);
-
-            // Ridisegna la linea rossa
-            aggiornaDisegnoRotta();
+            const iconaWP = L.divIcon({
+                className: 'wp-icon',
+                html: `<div style="background:#ef4444; color:white; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:bold; border:2px solid white;">${arrayWaypoint.length}</div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+            L.marker([lat, lng], {icon: iconaWP}).addTo(map);
+            aggiornaDisegnoETabella();
         });
 
-        // FUNZIONE: Aggiorna grafica e calcoli
-        function aggiornaDisegnoRotta() {
-            // Se c'è già una linea disegnata, la rimuove per non sovrapporle
-            if (lineaRotta) {
-                map.removeLayer(lineaRotta);
-            }
+        function aggiornaDisegnoETabella() {
+            if (lineaRotta) map.removeLayer(lineaRotta);
+            lineaRotta = L.polyline(arrayWaypoint, { color: '#ef4444', weight: 3, dashArray: '5, 10' }).addTo(map);
 
-            // Disegna la nuova linea spezzata che unisce tutti i punti
-            lineaRotta = L.polyline(arrayWaypoint, {
-                color: '#ef4444', 
-                weight: 3,
-                dashArray: '5, 10' // Rende la linea tratteggiata
-            }).addTo(map);
+            const declinazione = calcolaDeclinazione();
+            totaleMiglia = 0;
+            let htmlTabella = '';
 
-            // Calcola la distanza
-            totaleMetri = 0;
-            if (arrayWaypoint.length > 1) {
-                for (let i = 0; i < arrayWaypoint.length - 1; i++) {
-                    // map.distance calcola i metri tra due coordinate considerando la curvatura terrestre
-                    let puntoA = L.latLng(arrayWaypoint[i]);
-                    let puntoB = L.latLng(arrayWaypoint[i+1]);
-                    totaleMetri += map.distance(puntoA, puntoB);
+            for (let i = 0; i < arrayWaypoint.length; i++) {
+                let latFormattata = formattaGradi(arrayWaypoint[i][0], 'lat');
+                let lngFormattata = formattaGradi(arrayWaypoint[i][1], 'lng');
+                let trattaMiglia = 0;
+                let rvStr = "-";
+                let rmStr = "-";
+
+                if (i > 0) {
+                    let pA = L.latLng(arrayWaypoint[i-1]);
+                    let pB = L.latLng(arrayWaypoint[i]);
+                    trattaMiglia = map.distance(pA, pB) / 1852;
+                    totaleMiglia += trattaMiglia;
+
+                    let rv = calcolaBearing(arrayWaypoint[i-1][0], arrayWaypoint[i-1][1], arrayWaypoint[i][0], arrayWaypoint[i][1]);
+                    rvStr = Math.round(rv) + "°";
+                    let rm = (rv - declinazione + 360) % 360;
+                    rmStr = Math.round(rm) + "°";
                 }
+
+                htmlTabella += `
+                    <tr>
+                        <td><b>WP ${i+1}</b></td>
+                        <td style="font-family: monospace;">${latFormattata}</td>
+                        <td style="font-family: monospace;">${lngFormattata}</td>
+                        <td>${i === 0 ? '-' : trattaMiglia.toFixed(2)}</td>
+                        <td>${totaleMiglia.toFixed(2)}</td>
+                        <td style="background:#e0f2fe; font-weight:bold;">${rvStr}</td>
+                        <td style="background:#dcfce3; font-weight:bold;">${rmStr}</td>
+                    </tr>
+                `;
             }
 
-            // Converte i metri in Miglia Nautiche (1 Nm = 1852 metri)
-            const migliaNautiche = totaleMetri / 1852;
-            document.getElementById('distanza-totale').textContent = migliaNautiche.toFixed(2);
+            document.getElementById('distanza-totale').textContent = totaleMiglia.toFixed(2);
+            document.getElementById('corpo-tabella').innerHTML = htmlTabella;
         }
 
-        // FUNZIONE: Azzera tutto
         function cancellaRotta() {
-            // Rimuove tutti i livelli vettoriali (linee e pallini) dalla mappa
             map.eachLayer((layer) => {
-                if (layer instanceof L.Polyline || layer instanceof L.CircleMarker) {
+                if (layer instanceof L.Polyline || layer instanceof L.Marker) {
                     layer.remove();
                 }
             });
-            
             arrayWaypoint = [];
             lineaRotta = null;
             document.getElementById('distanza-totale').textContent = "0.00";
+            document.getElementById('corpo-tabella').innerHTML = "";
+        }
+
+        // 4. ESPORTAZIONE PDF
+        function esportaPDF() {
+            disegnaReticolo(); 
+            
+            const elementoPDF = document.getElementById('foglio-pdf');
+            const opzioni = {
+                margin:       10,
+                filename:     'Passage_Plan_Nautico.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().set(opzioni).from(elementoPDF).save();
         }
     </script>
 </body>
