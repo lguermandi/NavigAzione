@@ -19,6 +19,7 @@ const FILE_DA_SALVARE = [
     './moduli/maree.html',
     './moduli/motore.html',
     './moduli/vhf.html',
+    './moduli/logbook.html'
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];

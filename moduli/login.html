@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <h1>Accesso Plancia 🔐</h1>
+    <div class="subtitle" id="sottotitolo-pagina">Gestione profilo e sincronizzazione cloud</div>
+
+    <div class="panel" style="max-width: 450px; margin: 0 auto;">
+        
+        <!-- Form di Login/Registrazione -->
+        <div id="form-container">
+            <!-- Aggiunto onsubmit per evitare ricaricamenti strani della pagina -->
+            <form onsubmit="event.preventDefault(); effettuaAccesso();">
+                <div class="input-group">
+                    <label>Indirizzo Email</label>
+                    <input type="email" id="auth-email" autocomplete="email" placeholder="nome@email.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <!-- autocomplete="current-password" dice al browser di ricordarsela -->
+                    <input type="password" id="auth-password" autocomplete="current-password" placeholder="********" required>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn-action" style="flex: 1;">Accedi</button>
+                    <button type="button" class="btn-action" style="flex: 1; background: #334155; color: #f8fafc;" onclick="registrati()">Registrati</button>
+                </div>
+            </form>
+            <p id="auth-status" style="margin-top: 15px; text-align: center; font-size: 0.9rem;"></p>
+        </div>
+
+        <!-- Sezione Utente Loggato (Mostrata se la sessione è attiva) -->
+        <div id="profilo-container" class="hidden" style="text-align: center;">
+            <h3 style="color: #4ade80;">Bentornato, Comandante! ⛵</h3>
+            <p style="color: #94a3b8; margin-bottom: 20px;">Connesso come: <b id="testo-email-utente" style="color: #f8fafc;"></b></p>
+            <button class="btn-action" style="background: #ef4444; width: 100%;" onclick="esciAccount()">Disconnetti (Logout)</button>
+        </div>
+    </div>
+
+    <script>
+        // URL del tuo Apps Script
+        const API_URL = "IL_TUO_URL_DI_APPS_SCRIPT_QUI";
+
+        // APPENA SI APRE IL MODULO: Controlla se c'è già una sessione attiva
+        window.addEventListener('DOMContentLoaded', () => {
+            const utenteSalvato = localStorage.getItem('plancia_utente');
+            if (utenteSalvato) {
+                mostraStatoUtente(utenteSalvato);
+            }
+        });
+
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function effettuaAccesso() {
+            const email = document.getElementById('auth-email').value.trim();
+            const pass = document.getElementById('auth-password').value;
+            const status = document.getElementById('auth-status');
+
+            status.style.color = "#fb923c";
+            status.textContent = "Verifica credenziali sul cloud...";
+
+            const hashedPassword = await sha256(pass);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain" },
+                    body: JSON.stringify({ azione: "login", email: email, passwordHash: hashedPassword })
+                });
+                const risultato = await response.json();
+
+                if (risultato.status === "successo") {
+                    // MEMORIZZA L'UTENTE NEL BROWSER PER IL LOGIN AUTOMATICO
+                    localStorage.setItem('plancia_utente', email);
+                    mostraStatoUtente(email);
+                } else {
+                    status.style.color = "#ef4444";
+                    status.textContent = risultato.messaggio;
+                }
+            } catch (e) {
+                status.style.color = "#ef4444";
+                status.textContent = "Errore di rete durante il login.";
+            }
+        }
+
+        async function registrati() {
+            const email = document.getElementById('auth-email').value.trim();
+            const pass = document.getElementById('auth-password').value;
+            const status = document.getElementById('auth-status');
+
+            if (!email || !pass) {
+                status.style.color = "#ef4444";
+                status.textContent = "Inserisci email e password per la registrazione.";
+                return;
+            }
+
+            status.style.color = "#fb923c";
+            status.textContent = "Registrazione sul cloud in corso...";
+
+            const hashedPassword = await sha256(pass);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain" },
+                    body: JSON.stringify({ azione: "registrazione", email: email, passwordHash: hashedPassword })
+                });
+                const risultato = await response.json();
+
+                status.style.color = risultato.status === "successo" ? "#4ade80" : "#ef4444";
+                status.textContent = risultato.messaggio;
+            } catch (e) {
+                status.style.color = "#ef4444";
+                status.textContent = "Errore di rete durante la registrazione.";
+            }
+        }
+
+        function mostraStatoUtente(email) {
+            document.getElementById('form-container').classList.add('hidden');
+            document.getElementById('profilo-container').classList.remove('hidden');
+            document.getElementById('sottotitolo-pagina').textContent = "Area riservata equipaggio";
+            document.getElementById('testo-email-utente').textContent = email;
+        }
+
+        function esciAccount() {
+            // CANCELLA LA SESSIONE LOCALE
+            localStorage.removeItem('plancia_utente');
+            document.getElementById('form-container').classList.remove('hidden');
+            document.getElementById('profilo-container').classList.add('hidden');
+            document.getElementById('sottotitolo-pagina').textContent = "Gestione profilo e sincronizzazione cloud";
+            document.getElementById('auth-email').value = "";
+            document.getElementById('auth-password').value = "";
+            document.getElementById('auth-status').textContent = "";
+        }
+    </script>
+</body>
+</html>
