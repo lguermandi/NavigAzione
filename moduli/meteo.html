@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .meteo-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .valore-gigante { font-size: 3rem; font-weight: bold; margin: 15px 0; }
+        .meteo-label { font-size: 1.2rem; color: #94a3b8; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <h1>Meteo e Stato del Mare 🌊</h1>
+    <div class="subtitle">Dati satellitari in tempo reale (Open-Meteo API)</div>
+
+    <!-- Pannello Ricerca GPS -->
+    <div class="panel" style="text-align: center; margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto;">
+        <p style="color: #94a3b8; margin-bottom: 15px;">Interroga i server meteorologici usando le tue coordinate attuali.</p>
+        <button class="btn-action" id="btn-gps" onclick="ottieniMeteoGPS()">📍 Rileva Posizione e Scarica Dati</button>
+        <p id="stato-gps" style="margin-top: 15px; color: #fb923c; font-size: 0.95rem; font-family: monospace;"></p>
+    </div>
+
+    <!-- Pannelli Risultati (Nascosti di default) -->
+    <div class="panel-container hidden" id="dati-meteo">
+        <!-- Riquadro Vento -->
+        <div class="panel meteo-box">
+            <h3 style="color: #38bdf8; margin-bottom: 0;">💨 Vento in Superficie</h3>
+            <div class="valore-gigante" id="vento-velocita" style="color: #38bdf8;">-- kn</div>
+            <div class="meteo-label" id="vento-direzione">Direzione: --°</div>
+        </div>
+
+        <!-- Riquadro Onde -->
+        <div class="panel meteo-box">
+            <h3 style="color: #4ade80; margin-bottom: 0;">🌊 Moto Ondoso</h3>
+            <div class="valore-gigante" id="onda-altezza" style="color: #4ade80;">-- m</div>
+            <div class="meteo-label" id="onda-periodo">Periodo: -- s</div>
+            <div class="meteo-label" id="onda-direzione" style="margin-top: 5px;">Direzione: --°</div>
+        </div>
+    </div>
+
+    <script>
+        async function ottieniMeteoGPS() {
+            const stato = document.getElementById('stato-gps');
+            const container = document.getElementById('dati-meteo');
+
+            stato.textContent = "Aggancio satelliti GPS in corso...";
+            stato.style.color = "#fb923c";
+
+            // 1. Controllo hardware
+            if (!navigator.geolocation) {
+                stato.textContent = "Errore: Il tuo browser non supporta la geolocalizzazione.";
+                stato.style.color = "#ef4444";
+                return;
+            }
+
+            // 2. Richiesta coordinate
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                stato.textContent = `Coordinate (Lat: ${lat.toFixed(3)}, Lon: ${lon.toFixed(3)}). Connessione ai server...`;
+
+                try {
+                    // Chiamata 1: Vento (in Nodi)
+                    const urlVento = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kn`;
+                    const resVento = await fetch(urlVento);
+                    const dataVento = await resVento.json();
+
+                    // Chiamata 2: Onde Marine
+                    const urlOnde = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_direction,wave_period`;
+                    const resOnde = await fetch(urlOnde);
+                    const dataOnde = await resOnde.json();
+
+                    // 3. Scrittura dati a schermo
+                    document.getElementById('vento-velocita').textContent = `${dataVento.current.wind_speed_10m} kn`;
+                    document.getElementById('vento-direzione').textContent = `Direzione: ${dataVento.current.wind_direction_10m}°`;
+
+                    // Gestione sicurezza: se sei molto nell'entroterra, l'API marina restituisce "null"
+                    if (dataOnde.current.wave_height !== null) {
+                        document.getElementById('onda-altezza').textContent = `${dataOnde.current.wave_height} m`;
+                        document.getElementById('onda-periodo').textContent = `Periodo: ${dataOnde.current.wave_period} s`;
+                        document.getElementById('onda-direzione').textContent = `Direzione: ${dataOnde.current.wave_direction}°`;
+                    } else {
+                        document.getElementById('onda-altezza').textContent = `0 m`;
+                        document.getElementById('onda-periodo').textContent = `Rilevamento terrestre`;
+                        document.getElementById('onda-direzione').textContent = `N/D`;
+                    }
+
+                    // Mostra i riquadri e aggiorna lo stato
+                    container.classList.remove('hidden');
+                    stato.textContent = "✔ Dati meteorologici acquisiti con successo.";
+                    stato.style.color = "#4ade80";
+
+                } catch (error) {
+                    stato.textContent = "❌ Assenza di rete. Impossibile contattare i server Open-Meteo.";
+                    stato.style.color = "#ef4444";
+                }
+
+            }, (error) => {
+                stato.textContent = "❌ Permesso GPS negato. Attiva la localizzazione nel browser.";
+                stato.style.color = "#ef4444";
+            });
+        }
+    </script>
+</body>
+</html>

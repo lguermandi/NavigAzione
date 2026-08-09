@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .marea-box { background: #0f172a; padding: 20px; border-radius: 8px; border-left: 4px solid #38bdf8; margin-top: 20px; }
+        .dato-marea { font-size: 1.5rem; font-weight: bold; color: #4ade80; }
+        .tabella-dodicesimi { width: 100%; margin-top: 15px; border-collapse: collapse; }
+        .tabella-dodicesimi th, .tabella-dodicesimi td { padding: 8px; text-align: center; border-bottom: 1px solid #334155; color: #f8fafc; }
+        .tabella-dodicesimi th { color: #94a3b8; font-size: 0.9rem; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <h1>Calcolatore Maree 🌊</h1>
+    <div class="subtitle">Regola dei Dodicesimi per l'Esame</div>
+
+    <div class="panel">
+        <div class="input-group">
+            <label>Ora Bassa Marea (es. 08:00)</label>
+            <input type="time" id="ora-bm" value="08:00">
+        </div>
+        <div class="input-group">
+            <label>Livello Bassa Marea (metri)</label>
+            <input type="number" id="livello-bm" value="0.4" step="0.1">
+        </div>
+        
+        <div style="border-top: 1px solid #334155; margin: 15px 0;"></div>
+
+        <div class="input-group">
+            <label>Ora Alta Marea (es. 14:00)</label>
+            <input type="time" id="ora-am" value="14:00">
+        </div>
+        <div class="input-group">
+            <label>Livello Alta Marea (metri)</label>
+            <input type="number" id="livello-am" value="1.6" step="0.1">
+        </div>
+
+        <button class="btn-action" style="margin-top: 15px;" onclick="calcolaMarea()">📊 Calcola Andamento</button>
+    </div>
+
+    <!-- Risultati -->
+    <div class="panel hidden" id="pannello-risultati">
+        <h3 style="color: #38bdf8;">Analisi Marea</h3>
+        
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+            <div style="margin-bottom: 10px;">
+                <span style="color: #94a3b8; font-size: 0.9rem;">Ampiezza (Escursione)</span><br>
+                <span class="dato-marea" style="color: #f8fafc;" id="res-ampiezza">0.0</span> m
+            </div>
+            <div style="margin-bottom: 10px;">
+                <span style="color: #94a3b8; font-size: 0.9rem;">Valore 1/12</span><br>
+                <span class="dato-marea" style="color: #f8fafc;" id="res-dodicesimo">0.0</span> m
+            </div>
+            <div style="margin-bottom: 10px;">
+                <span style="color: #94a3b8; font-size: 0.9rem;">Durata Flusso</span><br>
+                <span class="dato-marea" style="color: #f8fafc;" id="res-durata">0</span> h
+            </div>
+        </div>
+
+        <div class="marea-box">
+            <h4 style="margin-top: 0; color: #94a3b8;">Tabella Oraria (Approssimazione)</h4>
+            <table class="tabella-dodicesimi" id="tabella-ore">
+                <!-- Generata dinamicamente in JS -->
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function calcolaMarea() {
+            const oraBM = document.getElementById('ora-bm').value;
+            const livBM = parseFloat(document.getElementById('livello-bm').value);
+            const oraAM = document.getElementById('ora-am').value;
+            const livAM = parseFloat(document.getElementById('livello-am').value);
+
+            if (!oraBM || !oraAM || isNaN(livBM) || isNaN(livAM)) {
+                alert("Compila tutti i campi correttamente.");
+                return;
+            }
+
+            // Calcoli base
+            const ampiezza = livAM - livBM;
+            const unDodicesimo = ampiezza / 12;
+
+            // Calcolo ore
+            let [hBM, mBM] = oraBM.split(':').map(Number);
+            let [hAM, mAM] = oraAM.split(':').map(Number);
+            
+            let minBM_tot = hBM * 60 + mBM;
+            let minAM_tot = hAM * 60 + mAM;
+            
+            // Se l'alta marea è il giorno dopo
+            if (minAM_tot < minBM_tot) {
+                minAM_tot += 24 * 60;
+            }
+
+            const durataMinuti = minAM_tot - minBM_tot;
+            const durataOre = durataMinuti / 60;
+            
+            // Ogni "ora di marea" effettiva
+            const stepMinuti = durataMinuti / 6; 
+
+            // Scrittura dei riassunti
+            document.getElementById('res-ampiezza').textContent = ampiezza.toFixed(2);
+            document.getElementById('res-dodicesimo').textContent = unDodicesimo.toFixed(3);
+            document.getElementById('res-durata').textContent = durataOre.toFixed(1);
+
+            // Costruzione Tabella Dodicesimi
+            // I moltiplicatori sono: +1/12, +2/12, +3/12, +3/12, +2/12, +1/12
+            const sequenza = [1, 2, 3, 3, 2, 1];
+            let htmlTabella = `<tr><th>Ora</th><th>Variazione</th><th>Livello Acqua</th></tr>`;
+            
+            let livelloAttuale = livBM;
+            let minutiAttuali = minBM_tot;
+
+            // Riga di partenza (Bassa Marea)
+            htmlTabella += `<tr>
+                <td><b>${formattaOra(minutiAttuali)}</b></td>
+                <td>-</td>
+                <td style="color:#ef4444; font-weight:bold;">${livelloAttuale.toFixed(2)} m (BM)</td>
+            </tr>`;
+
+            for (let i = 0; i < 6; i++) {
+                minutiAttuali += stepMinuti;
+                let variazione = sequenza[i] * unDodicesimo;
+                livelloAttuale += variazione;
+
+                let etichetta = "";
+                if (i === 5) etichetta = " (AM)";
+
+                let color = i === 5 ? "color:#38bdf8; font-weight:bold;" : "";
+
+                htmlTabella += `<tr>
+                    <td>${formattaOra(minutiAttuali)}</td>
+                    <td style="color:#94a3b8;">+ ${sequenza[i]}/12</td>
+                    <td style="${color}">${livelloAttuale.toFixed(2)} m${etichetta}</td>
+                </tr>`;
+            }
+
+            document.getElementById('tabella-ore').innerHTML = htmlTabella;
+            document.getElementById('pannello-risultati').classList.remove('hidden');
+        }
+
+        // Funzione di utilità per formattare i minuti in orario HH:MM
+        function formattaOra(minutiTotali) {
+            let h = Math.floor(minutiTotali / 60) % 24;
+            let m = Math.round(minutiTotali % 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>

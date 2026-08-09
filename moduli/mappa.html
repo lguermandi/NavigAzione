@@ -4,125 +4,137 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../css/style.css">
-    <!-- Librerie Mappa -->
+    
+    <!-- Librerie CSS e JS di Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        #mappa-container { 
+            height: 500px; 
+            width: 100%; 
+            border-radius: 8px; 
+            border: 2px solid #334155; 
+            z-index: 1;
+            cursor: crosshair; /* Cambia il cursore per far capire che si può cliccare */
+        }
+        .dashboard-rotta {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dato-rotta {
+            font-size: 1.5rem;
+            color: #38bdf8;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
 
-    <h2>Pianificatore di Rotta Geografica</h2>
-    
-    <div class="layout-mappa">
-        <!-- Mappa interattiva -->
-        <div id="map"></div>
+    <h1>Mappa & Rotte 🌍</h1>
+    <div class="subtitle">Plotter Cartografico e Calcolo Distanze</div>
 
-        <!-- Pannello Dati -->
-        <div class="panel-mappa">
-            <h3>Dati Navigazione</h3>
-            <p class="instruzioni">📍 Clicca sulla mappa per impostare il <b>Punto di Partenza (A)</b> e poi il <b>Punto di Arrivo (B)</b>.</p>
-            
-            <div class="info-box" id="datiRotta">
-                Nessuna rotta tracciata.<br>Clicca su due punti della mappa.
-            </div>
-
-            <button class="btn-resetid" class="btn-reset" onclick="azzeraRotta()">Azzera / Nuova Rotta</button>
+    <!-- Pannello di controllo superiore -->
+    <div class="dashboard-rotta">
+        <div>
+            <span style="color: #94a3b8; font-size: 0.9rem;">Distanza Totale Rotta</span><br>
+            <span class="dato-rotta" id="distanza-totale">0.00</span> <span style="color: #38bdf8;">Nm</span>
+        </div>
+        <div>
+            <button class="btn-action" style="background: #ef4444; padding: 10px 20px; font-size: 0.9rem;" onclick="cancellaRotta()">Cestina Rotta</button>
         </div>
     </div>
 
-<script>
-    // 1. Inizializzazione della mappa centrata sul Mar Tirreno (es. Arcipelago Toscano / Capraia / Elba)
-    const map = L.map('map').setView([42.75, 10.25], 9);
+    <!-- Contenitore Mappa -->
+    <div class="panel">
+        <div id="mappa-container"></div>
+        <p style="color: #94a3b8; font-size: 0.85rem; text-align: center; margin-top: 10px;">
+            ℹ️ Clicca in sequenza sulla mappa per tracciare i waypoint.
+        </p>
+    </div>
 
-    // 2. Carichiamo lo strato grafico della mappa (OpenStreetMap pulito)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+    <script>
+        // Inizializza mappa (Centrata sul Mediterraneo Occidentale)
+        const map = L.map('mappa-container').setView([40.5, 6.0], 6);
 
-    let puntoA = null;
-    let puntoB = null;
-    let markerA = null;
-    let markerB = null;
-    let lineaRotta = null;
+        // Livello Base (Coste e Città)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
-    // 3. Gestione del click sulla mappa
-    map.on('click', function(e) {
-        const latLng = e.latlng;
+        // Livello Nautico (Fari, Boe, Batimetriche)
+        L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
-        if (!puntoA) {
-            puntoA = latLng;
-            markerA = L.marker([puntoA.lat, puntoA.lng]).addTo(map)
-                .bindPopup("<b>Punto A (Partenza)</b>").openPopup();
-        } else if (!puntoB) {
-            puntoB = latLng;
-            markerB = L.marker([puntoB.lat, puntoB.lng]).addTo(map)
-                .bindPopup("<b>Punto B (Arrivo)</b>").openPopup();
+        // VARIABILI PER LA ROTTA
+        let arrayWaypoint = []; // Salva le coordinate dei click
+        let lineaRotta = null;  // L'oggetto "linea rossa" disegnata sulla mappa
+        let totaleMetri = 0;
 
-            // Disegna la linea di rotta tra A e B
-            lineaRotta = L.polyline([puntoA, puntoB], {color: '#4ade80', weight: 3}).addTo(map);
+        // FUNZIONE: Clic sulla mappa
+        map.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            
+            // Aggiungi il nuovo punto all'array
+            arrayWaypoint.push([lat, lng]);
+            
+            // Metti un marcatore (il pallino) sul punto cliccato
+            L.circleMarker([lat, lng], {
+                radius: 5,
+                color: '#ef4444',
+                fillOpacity: 1
+            }).addTo(map);
 
-            // Calcola distanza e rotta
-            calcolaDatiNavigazione(puntoA, puntoB);
-        } else {
-            // Se ci sono già A e B, resetta e ricomincia con un nuovo punto A
-            azzeraRotta();
-            puntoA = latLng;
-            markerA = L.marker([puntoA.lat, puntoA.lng]).addTo(map)
-                .bindPopup("<b>Punto A (Partenza)</b>").openPopup();
+            // Ridisegna la linea rossa
+            aggiornaDisegnoRotta();
+        });
+
+        // FUNZIONE: Aggiorna grafica e calcoli
+        function aggiornaDisegnoRotta() {
+            // Se c'è già una linea disegnata, la rimuove per non sovrapporle
+            if (lineaRotta) {
+                map.removeLayer(lineaRotta);
+            }
+
+            // Disegna la nuova linea spezzata che unisce tutti i punti
+            lineaRotta = L.polyline(arrayWaypoint, {
+                color: '#ef4444', 
+                weight: 3,
+                dashArray: '5, 10' // Rende la linea tratteggiata
+            }).addTo(map);
+
+            // Calcola la distanza
+            totaleMetri = 0;
+            if (arrayWaypoint.length > 1) {
+                for (let i = 0; i < arrayWaypoint.length - 1; i++) {
+                    // map.distance calcola i metri tra due coordinate considerando la curvatura terrestre
+                    let puntoA = L.latLng(arrayWaypoint[i]);
+                    let puntoB = L.latLng(arrayWaypoint[i+1]);
+                    totaleMetri += map.distance(puntoA, puntoB);
+                }
+            }
+
+            // Converte i metri in Miglia Nautiche (1 Nm = 1852 metri)
+            const migliaNautiche = totaleMetri / 1852;
+            document.getElementById('distanza-totale').textContent = migliaNautiche.toFixed(2);
         }
-    });
 
-    // 4. Formule di calcolo nautico (Lossodromia)
-    function calcolaDatiNavigazione(a, b) {
-        const R = 3440.065; // Raggio della Terra in Miglia Nautiche
-        
-        const lat1 = toRad(a.lat);
-        const lat2 = toRad(b.lat);
-        const dLat = toRad(b.lat - a.lat);
-        const dLon = toRad(b.lng - a.lng);
-
-        // Distanza Haversine in Nm
-        const x = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1) * Math.cos(lat2) *
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
-        const distanzaNm = R * c;
-
-        // Calcolo Rotta Vera (Rv)
-        const y = Math.sin(dLon) * Math.cos(lat2);
-        const z = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-        let rottaRad = Math.atan2(y, z);
-        let rottaDeg = toDeg(rottaRad);
-        rottaDeg = (rottaDeg + 360) % 360;
-
-        // Mostra i risultati nel pannello
-        document.getElementById('datiRotta').innerHTML = `
-            <b>Rotta Calcolata:</b><br>
-            • Distanza: <span style="color:#4ade80"><b>${distanzaNm.toFixed(1)} nm</b></span><br>
-            • Rotta Vera (Rv): <span style="color:#38bdf8"><b>${Math.round(rottaDeg)}°</b></span><br>
-            <hr style="border:0; border-top:1px solid #334155; margin:8px 0;">
-            <small>Da A: ${a.lat.toFixed(3)}°N, ${a.lng.toFixed(3)}°E<br>A B: ${b.lat.toFixed(3)}°N, ${b.lng.toFixed(3)}°E</small>
-        `;
-    }
-
-    function toRad(val) { return val * Math.PI / 180; }
-    function toDeg(val) { return val * 180 / Math.PI; }
-
-    // 5. Funzione per pulire la mappa
-    function azzeraRotta() {
-        if (markerA) map.removeLayer(markerA);
-        if (markerB) map.removeLayer(markerB);
-        if (lineaRotta) map.removeLayer(lineaRotta);
-        
-        puntoA = null;
-        puntoB = null;
-        markerA = null;
-        markerB = null;
-        lineaRotta = null;
-
-        document.getElementById('datiRotta').innerHTML = `Nessuna rotta tracciata.<br>Clicca su due punti della mappa.`;
-    }
-</script>
-
+        // FUNZIONE: Azzera tutto
+        function cancellaRotta() {
+            // Rimuove tutti i livelli vettoriali (linee e pallini) dalla mappa
+            map.eachLayer((layer) => {
+                if (layer instanceof L.Polyline || layer instanceof L.CircleMarker) {
+                    layer.remove();
+                }
+            });
+            
+            arrayWaypoint = [];
+            lineaRotta = null;
+            document.getElementById('distanza-totale').textContent = "0.00";
+        }
+    </script>
 </body>
 </html>

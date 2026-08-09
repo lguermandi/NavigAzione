@@ -13,6 +13,7 @@ const FILE_DA_SALVARE = [
     './moduli/quiz.html',
     './moduli/vela.html',
     './moduli/mappa.html',
+    './moduli/meteo.html'
     // Salviamo anche le librerie della mappa!
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'

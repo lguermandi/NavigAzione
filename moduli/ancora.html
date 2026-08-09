@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .radar-box { 
+            background: #0f172a; padding: 30px; border-radius: 50%; width: 220px; height: 220px; 
+            margin: 20px auto; display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; border: 4px solid #334155; transition: all 0.3s ease; 
+        }
+        .radar-box.allarme { 
+            border-color: #ef4444; background: #450a0a; animation: pulse 1s infinite; 
+        }
+        @keyframes pulse { 
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 
+            70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
+        }
+        .distanza-val { font-size: 3rem; font-weight: bold; color: #4ade80; }
+        .radar-box.allarme .distanza-val { color: #f8fafc; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <h1>Allarme Ancora ⚓</h1>
+    <div class="subtitle">Controllo spedamento con Geofencing (Offline)</div>
+
+    <!-- Impostazioni -->
+    <div class="panel" id="pannello-setup">
+        <div class="input-group">
+            <label>Raggio di sicurezza (Metri calumo + Tolleranza)</label>
+            <input type="number" id="raggio-allarme" value="30" step="5">
+        </div>
+        <button class="btn-action" onclick="calaAncora()">⚓ Registra Posizione e Attiva</button>
+        <p id="stato-gps" style="margin-top: 15px; color: #fb923c; font-size: 0.9rem; text-align: center;"></p>
+    </div>
+
+    <!-- Monitoraggio -->
+    <div class="panel hidden" id="pannello-radar" style="text-align: center;">
+        <h3 id="titolo-radar" style="color: #4ade80;">Ancora Fissata - Monitoraggio Attivo</h3>
+        
+        <div class="radar-box" id="radar">
+            <span style="color: #94a3b8; font-size: 0.9rem;">Distanza</span>
+            <div class="distanza-val" id="distanza-attuale">0</div>
+            <span style="color: #94a3b8; font-size: 0.9rem;">Metri</span>
+        </div>
+
+        <p style="color: #94a3b8; margin-bottom: 15px;">Limite impostato: <b id="limite-mostrato">30</b> metri.</p>
+        <button class="btn-action" style="background: #ef4444;" onclick="salpaAncora()">Disattiva Allarme</button>
+    </div>
+
+    <script>
+        let watchId = null;
+        let latAncora = null;
+        let lonAncora = null;
+        let raggioMax = 30;
+
+        // Algoritmo di Haversine per calcolare i metri esatti tra due coordinate GPS
+        function calcolaDistanza(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Raggio della terra in metri
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; 
+        }
+
+        function calaAncora() {
+            const stato = document.getElementById('stato-gps');
+            raggioMax = parseInt(document.getElementById('raggio-allarme').value);
+            document.getElementById('limite-mostrato').textContent = raggioMax;
+
+            stato.textContent = "Acquisizione posizione esatta in corso...";
+
+            if (!navigator.geolocation) {
+                stato.textContent = "Errore: GPS non supportato dal dispositivo.";
+                return;
+            }
+
+            // Ottiene la posizione esatta iniziale
+            navigator.geolocation.getCurrentPosition((position) => {
+                latAncora = position.coords.latitude;
+                lonAncora = position.coords.longitude;
+                
+                document.getElementById('pannello-setup').classList.add('hidden');
+                document.getElementById('pannello-radar').classList.remove('hidden');
+                
+                // Inizia a "guardare" la posizione in tempo reale
+                watchId = navigator.geolocation.watchPosition(controllaPosizione, (err) => {
+                    console.error("Errore lettura GPS continua:", err);
+                }, { enableHighAccuracy: true });
+
+            }, (error) => {
+                stato.textContent = "Impossibile attivare: Permessi GPS negati o segnale assente.";
+            }, { enableHighAccuracy: true });
+        }
+
+        function controllaPosizione(position) {
+            const latAttuale = position.coords.latitude;
+            const lonAttuale = position.coords.longitude;
+            
+            // Calcola a quanti metri siamo dal punto in cui abbiamo premuto il bottone
+            const distanzaMetri = Math.round(calcolaDistanza(latAncora, lonAncora, latAttuale, lonAttuale));
+            
+            document.getElementById('distanza-attuale').textContent = distanzaMetri;
+
+            const radar = document.getElementById('radar');
+            const titolo = document.getElementById('titolo-radar');
+
+            // Scatta l'allarme se superiamo i metri impostati
+            if (distanzaMetri > raggioMax) {
+                radar.classList.add('allarme');
+                titolo.textContent = "🚨 PERICOLO: ANCORA SPEDATA! 🚨";
+                titolo.style.color = "#ef4444";
+                // Qui in futuro potremmo aggiungere un suono: new Audio('allarme.mp3').play();
+            } else {
+                radar.classList.remove('allarme');
+                titolo.textContent = "Ancora Fissata - Monitoraggio Attivo";
+                titolo.style.color = "#4ade80";
+            }
+        }
+
+        function salpaAncora() {
+            // Ferma il tracciamento GPS per risparmiare batteria
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+            document.getElementById('pannello-radar').classList.add('hidden');
+            document.getElementById('pannello-setup').classList.remove('hidden');
+            document.getElementById('stato-gps').textContent = "";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .night-sky { 
+            background: #020617; 
+            height: 250px; 
+            border-radius: 8px; 
+            position: relative; 
+            border: 2px solid #334155; 
+            margin-bottom: 20px; 
+        }
+        
+        /* Regole base per le luci e l'effetto bagliore */
+        .light { width: 14px; height: 14px; border-radius: 50%; position: absolute; }
+        .white-light { background: #fff; box-shadow: 0 0 15px 6px rgba(255, 255, 255, 0.5); }
+        .red-light { background: #ef4444; box-shadow: 0 0 15px 6px rgba(239, 68, 68, 0.5); }
+        .green-light { background: #22c55e; box-shadow: 0 0 15px 6px rgba(34, 197, 94, 0.5); }
+
+        /* Posizionamento sull'albero e sulle murate */
+        .pos-top { top: 20%; }
+        .pos-mid { top: 40%; }
+        .pos-bot { top: 60%; }
+        .pos-center { left: 48%; }
+        .pos-left { left: 35%; top: 75%; }
+        .pos-right { right: 35%; top: 75%; }
+
+        /* Stile per i pulsanti di risposta */
+        .btn-answer { 
+            display: block; width: 100%; margin-bottom: 10px; 
+            background: #1e293b; text-align: left; transition: 0.2s; 
+        }
+        .btn-answer:hover:not([disabled]) { background: #334155; }
+        .correct-anim { background: #064e3b !important; border-color: #4ade80 !important; color: #4ade80; }
+        .wrong-anim { background: #7f1d1d !important; border-color: #ef4444 !important; color: #f8fafc; text-decoration: line-through; }
+    </style>
+</head>
+<body>
+
+    <h1>Riconoscimento Fanali 💡</h1>
+    <div class="subtitle">Simulatore Notturno COLREGs</div>
+
+    <div class="panel">
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px; text-align: center;">
+            Osserva le luci all'orizzonte e identifica il tipo di unità navale.
+        </p>
+
+        <!-- Il riquadro buio dove si accendono le luci -->
+        <div class="night-sky" id="night-sky"></div>
+
+        <!-- Dove verranno generati i pulsanti con le opzioni -->
+        <div id="answers-container"></div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn-action" style="background: #38bdf8; color: #0f172a; font-weight: bold;" onclick="generaNave()">🎲 Genera Nave Casuale</button>
+        </div>
+    </div>
+
+    <script>
+        // Il nostro mini-database delle navi
+        const flotta = [
+            {
+                nome: "Nave a motore in navigazione (vista di prora)",
+                luci: [
+                    { type: 'white-light', pos: 'pos-top pos-center' },
+                    { type: 'red-light', pos: 'pos-left' },
+                    { type: 'green-light', pos: 'pos-right' }
+                ]
+            },
+            {
+                nome: "Nave che non governa (ferma rispetto all'acqua)",
+                luci: [
+                    { type: 'red-light', pos: 'pos-top pos-center' },
+                    { type: 'red-light', pos: 'pos-mid pos-center' }
+                ]
+            },
+            {
+                nome: "Peschereccio a strascico in navigazione",
+                luci: [
+                    { type: 'green-light', pos: 'pos-top pos-center' },
+                    { type: 'white-light', pos: 'pos-mid pos-center' },
+                    { type: 'red-light', pos: 'pos-left' },
+                    { type: 'green-light', pos: 'pos-right' }
+                ]
+            },
+            {
+                nome: "Nave a vela in navigazione",
+                luci: [
+                    { type: 'red-light', pos: 'pos-left' },
+                    { type: 'green-light', pos: 'pos-right' }
+                ]
+            },
+            {
+                nome: "Rimorchiatore con rimorchio lungo > 200m",
+                luci: [
+                    { type: 'white-light', pos: 'pos-top pos-center' },
+                    { type: 'white-light', pos: 'pos-mid pos-center' },
+                    { type: 'white-light', pos: 'pos-bot pos-center' },
+                    { type: 'red-light', pos: 'pos-left' },
+                    { type: 'green-light', pos: 'pos-right' }
+                ]
+            }
+        ];
+
+        let corretta = {};
+
+        function generaNave() {
+            const sky = document.getElementById('night-sky');
+            const answers = document.getElementById('answers-container');
+            sky.innerHTML = '';
+            answers.innerHTML = '';
+
+            // Sceglie una nave casuale dal database
+            corretta = flotta[Math.floor(Math.random() * flotta.length)];
+
+            // Disegna le luci associate a quella nave
+            corretta.luci.forEach(luce => {
+                const divLuce = document.createElement('div');
+                divLuce.className = `light ${luce.type} ${luce.pos}`;
+                sky.appendChild(divLuce);
+            });
+
+            // Genera le opzioni (quella corretta + 3 sbagliate a caso)
+            let opzioni = [corretta.nome];
+            while(opzioni.length < 4) {
+                let naveSbagliata = flotta[Math.floor(Math.random() * flotta.length)].nome;
+                if(!opzioni.includes(naveSbagliata)) {
+                    opzioni.push(naveSbagliata);
+                }
+            }
+
+            // Mescola l'ordine dei pulsanti
+            opzioni.sort(() => Math.random() - 0.5);
+
+            // Stampa i pulsanti a schermo
+            opzioni.forEach(opzione => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-action btn-answer';
+                btn.textContent = opzione;
+                btn.onclick = () => verificaRisposta(btn, opzione);
+                answers.appendChild(btn);
+            });
+        }
+
+        function verificaRisposta(btnCliccato, risposta) {
+            // Disattiva tutti i pulsanti per impedire di cliccare due volte
+            const bottoni = document.querySelectorAll('.btn-answer');
+            bottoni.forEach(b => b.disabled = true);
+
+            // Logica di vittoria/sconfitta
+            if (risposta === corretta.nome) {
+                btnCliccato.classList.add('correct-anim');
+            } else {
+                btnCliccato.classList.add('wrong-anim');
+                // Se hai sbagliato, colora di verde quella che era giusta
+                bottoni.forEach(b => {
+                    if(b.textContent === corretta.nome) b.classList.add('correct-anim');
+                });
+            }
+        }
+
+        // Lancia la prima nave non appena si apre la pagina
+        generaNave();
+    </script>
+</body>
+</html>

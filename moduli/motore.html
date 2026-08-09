@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .risultato-box { background: #0f172a; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #f59e0b; }
+        .valore-motore { font-size: 1.8rem; font-weight: bold; color: #f8fafc; }
+        .safe-zone { color: #4ade80; }
+        .danger-zone { color: #ef4444; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <h1>Autonomia Motore ⛽</h1>
+    <div class="subtitle">Calcolo consumi e punto di non ritorno</div>
+
+    <div class="panel">
+        <div class="input-group">
+            <label>Carburante a bordo (Litri)</label>
+            <input type="number" id="litri-totali" value="150" step="10">
+        </div>
+        <div class="input-group">
+            <label>Consumo orario stimato a RPM di crociera (L/h)</label>
+            <input type="number" id="consumo-ora" value="5.5" step="0.5">
+        </div>
+        <div class="input-group">
+            <label>Velocità stimata a motore (SOG - Nodi)</label>
+            <input type="number" id="velocita-motore" value="6.0" step="0.5">
+        </div>
+        <div class="input-group">
+            <label>Riserva di sicurezza di legge (%)</label>
+            <input type="number" id="riserva" value="30" step="5">
+        </div>
+        
+        <button class="btn-action" style="margin-top: 15px; background: #f59e0b;" onclick="calcolaAutonomia()">⚙️ Calcola Autonomia</button>
+    </div>
+
+    <div class="panel hidden" id="pannello-risultati">
+        <h3 style="color: #f59e0b;">Analisi Navigazione</h3>
+        
+        <div class="risultato-box" style="border-left-color: #4ade80;">
+            <h4 style="margin-top: 0; color: #94a3b8;">Autonomia Operativa Sicura (con riserva)</h4>
+            Tempo max di navigazione: <span class="valore-motore safe-zone" id="tempo-sicuro">0</span> ore<br>
+            Distanza max percorribile: <span class="valore-motore safe-zone" id="miglia-sicure">0</span> Nm<br>
+            <small style="color: #94a3b8; display: block; margin-top: 5px;">Litri operativi utilizzabili: <span id="litri-sicuri">0</span> L</small>
+        </div>
+
+        <div class="risultato-box" style="border-left-color: #ef4444;">
+            <h4 style="margin-top: 0; color: #94a3b8;">Autonomia Assoluta (Serbatoio a secco)</h4>
+            Tempo limite teorico: <span class="valore-motore danger-zone" id="tempo-limite">0</span> ore<br>
+            Distanza limite teorica: <span class="valore-motore danger-zone" id="miglia-limite">0</span> Nm
+        </div>
+    </div>
+
+    <script>
+        function calcolaAutonomia() {
+            const litriTotali = parseFloat(document.getElementById('litri-totali').value);
+            const consumoOra = parseFloat(document.getElementById('consumo-ora').value);
+            const velocita = parseFloat(document.getElementById('velocita-motore').value);
+            const percentualeRiserva = parseFloat(document.getElementById('riserva').value);
+
+            if (!litriTotali || !consumoOra || !velocita) {
+                alert("Compila tutti i dati del propulsore.");
+                return;
+            }
+
+            // 1. Calcoli Assoluti (fino all'ultima goccia)
+            const oreLimite = litriTotali / consumoOra;
+            const migliaLimite = oreLimite * velocita;
+
+            // 2. Calcoli Operativi (togliendo il 30% imposto per legge)
+            const litriRiserva = litriTotali * (percentualeRiserva / 100);
+            const litriOperativi = litriTotali - litriRiserva;
+            
+            const oreSicure = litriOperativi / consumoOra;
+            const migliaSicure = oreSicure * velocita;
+
+            // 3. Stampa a video
+            document.getElementById('tempo-limite').textContent = oreLimite.toFixed(1);
+            document.getElementById('miglia-limite').textContent = Math.floor(migliaLimite);
+            
+            document.getElementById('tempo-sicuro').textContent = oreSicure.toFixed(1);
+            document.getElementById('miglia-sicure').textContent = Math.floor(migliaSicure);
+            document.getElementById('litri-sicuri').textContent = litriOperativi.toFixed(0);
+
+            document.getElementById('pannello-risultati').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
