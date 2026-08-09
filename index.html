@@ -9,6 +9,10 @@
     <!-- Icone per il browser e per i dispositivi Apple -->
     <link rel="icon" href="img/icona.png" type="image/png">
     <link rel="apple-touch-icon" href="img/icona.png">
+    
+    <!-- IDENTIFICATIVO WEB-APP (Quello che mancava!) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
 </head>
 <body>
     
@@ -56,17 +60,24 @@
             btn.className = 'menu-btn';
             btn.innerHTML = `${modulo.icona} ${modulo.titolo}`;
             btn.onclick = () => {
-                // Carica la pagina nell'iframe
                 document.getElementById('app-frame').src = modulo.file;
-                
-                // Chiude il menu SEMPRE, sia da PC che da telefono
                 toggleMenu(); 
             };
             menuContainer.appendChild(btn);
         });
 
-        // Carica la Home all'avvio
         document.getElementById('app-frame').src = APP_MODULI[0].file;
+    </script>
+
+    <!-- ATTIVAZIONE SERVICE WORKER PER OFFLINE E INSTALLAZIONE APP -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Registrato!'))
+                    .catch(err => console.log('Errore Service Worker:', err));
+            });
+        }
     </script>
 </body>
 </html>
