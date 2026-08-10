@@ -3,7 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plancia di Comando</title>
+    
+    <!-- SEO & Metadata per i Motori di Ricerca -->
+    <title>NavigAzione | Simulatore di Navigazione e Quiz Patente Nautica</title>
+    <meta name="description" content="Software di bordo digitale e offline-ready per diportisti e studenti: carteggio, quiz patente nautica, simulatore VHF, meteo mare, logbook e calcoli di navigazione.">
+    <meta name="keywords" content="patente nautica, carteggio, simulatore vhf, logbook, meteo mare, nautica, app barca">
+    <meta name="author" content="Comandante">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Anteprime per Social (WhatsApp, Facebook, ecc.) -->
+    <meta property="og:title" content="NavigAzione | Utility Nautica">
+    <meta property="og:description" content="Strumenti digitali avanzati per la navigazione, il carteggio e la preparazione alla patente nautica.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="./img/icona.png"> 
+
     <link rel="stylesheet" href="css/style.css">
     
     <!-- Icone per il browser e per i dispositivi Apple -->
@@ -18,7 +31,7 @@
     
     <!-- Barra Navigazione Superiore -->
     <header class="topbar">
-        <div class="logo-title">⛵ Plancia di Comando</div>
+        <div class="logo-title">⛵ NavigAzione</div>
         <button id="menu-toggle" class="hamburger">☰</button>
     </header>
 
@@ -42,7 +55,7 @@
 
     <script src="config.js"></script>
     <script>
-        // --- CONFIGURAZIONE CLOUD (INCOLLA QUI IL TUO URL DI APPS SCRIPT) ---
+        // --- CONFIGURAZIONE CLOUD ---
         const API_URL = "https://script.google.com/macros/s/AKfycbz66PaHt0R7KJclqVBHGVOSGHrTBBHRGl5HKl7AarzPBa9ZcmJCYqKrHxpoSacrJBw/exec";
 
         // Funzione globale di sincronizzazione utilizzata dai moduli (es. Logbook, Quiz)
