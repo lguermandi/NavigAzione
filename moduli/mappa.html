@@ -57,6 +57,21 @@
         <button class="btn-action" onclick="cercaLuogo()">🔍 Cerca Posizione</button>
     </div>
 
+    <!-- PANNELLO LIVE TRACKING -->
+    <div class="panel" style="background: #0f172a; border: 1px solid #10b981; margin-bottom: 20px;">
+        <h3 style="color: #10b981; margin-top: 0;">📡 Scatola Nera (Live Tracking)</h3>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;">
+            Richiede l'accesso con email. Mantiene lo schermo acceso durante l'uso.
+        </p>
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-tracker" class="btn-action" style="background: #10b981; color: white;" onclick="toggleTracker()">▶️ Inizia Navigazione</button>
+        </div>
+        <div id="tracker-stats" style="display: none; margin-top: 15px; color: #f8fafc; font-family: monospace; font-size: 1.1rem;">
+            Velocità: <b id="trk-vel" style="color: #38bdf8;">0.0 kn</b> | 
+            Punti: <b id="trk-punti">0</b>
+        </div>
+    </div>
+     
     <!-- IMPOSTAZIONI NAVIGAZIONE -->
     <div class="impostazioni-barca">
         <div>
@@ -402,6 +417,110 @@
             disegnaReticolo(); 
             html2pdf().set({ margin: 10, filename: 'Passage_Plan_Nautico.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } }).from(document.getElementById('foglio-pdf')).save();
         }
+
+        // --- MOTORE LIVE TRACKING E WAKE LOCK ---
+        let watchId = null;
+        let wakeLock = null;
+        let tracciaAttuale = [];
+        let lineaTraccia = null;
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log("Schermo bloccato acceso.");
+                }
+            } catch (err) { console.error("Wake Lock fallito:", err); }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release().then(() => wakeLock = null);
+                console.log("Schermo sbloccato.");
+            }
+        }
+
+        async function toggleTracker() {
+            const emailUtente = localStorage.getItem('plancia_utente');
+            if (!emailUtente) {
+                alert("Devi effettuare l'accesso dal Profilo per registrare le tue tracce!");
+                return;
+            }
+
+            const btn = document.getElementById('btn-tracker');
+            const statsDiv = document.getElementById('tracker-stats');
+
+            if (watchId !== null) {
+                // FERMA LA REGISTRAZIONE
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                releaseWakeLock();
+                
+                btn.innerHTML = "▶️ Inizia Navigazione";
+                btn.style.background = "#10b981";
+                
+                if (tracciaAttuale.length > 0) {
+                    const nomeTraccia = prompt("Navigazione terminata! Dai un nome a questa uscita:", "Uscita in 420 - " + new Date().toLocaleDateString());
+                    if (nomeTraccia) salvaTraccia(nomeTraccia, emailUtente);
+                }
+                
+                tracciaAttuale = [];
+                statsDiv.style.display = "none";
+                
+            } else {
+                // AVVIA LA REGISTRAZIONE
+                if (!navigator.geolocation) { alert("GPS non supportato!"); return; }
+                
+                await requestWakeLock();
+                tracciaAttuale = [];
+                if (lineaTraccia) map.removeLayer(lineaTraccia);
+                lineaTraccia = L.polyline([], { color: '#10b981', weight: 4 }).addTo(map);
+                
+                btn.innerHTML = "⏹ Ferma e Salva";
+                btn.style.background = "#ef4444";
+                statsDiv.style.display = "block";
+                
+                watchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lon = pos.coords.longitude;
+                        const vel = pos.coords.speed ? (pos.coords.speed * 1.94384).toFixed(1) : "0.0"; // Da m/s a Nodi
+                        
+                        tracciaAttuale.push({ lat, lon, vel, time: new Date().toISOString() });
+                        lineaTraccia.addLatLng([lat, lon]);
+                        
+                        document.getElementById('trk-vel').textContent = vel + " kn";
+                        document.getElementById('trk-punti').textContent = tracciaAttuale.length;
+                        map.panTo([lat, lon]); // Segue la barca
+                    },
+                    (err) => console.error(err),
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+                );
+            }
+        }
+
+        // SALVATAGGIO ISOLATO PER UTENTE
+        function salvaTraccia(nome, utente) {
+            const chiaveStorage = 'tracce_' + utente; // Es: tracce_luca@email.com
+            let storico = JSON.parse(localStorage.getItem(chiaveStorage) || "[]");
+            
+            const nuovaTraccia = {
+                id: Date.now(),
+                nome: nome,
+                data: new Date().toLocaleString(),
+                punti: tracciaAttuale
+            };
+            
+            storico.push(nuovaTraccia);
+            localStorage.setItem(chiaveStorage, JSON.stringify(storico));
+            
+            // Sincronizzazione in cloud (se attiva in index.html)
+            if (window.parent && window.parent.sincronizzaConCloud) {
+                window.parent.sincronizzaConCloud('tracce_gps', storico);
+            }
+            alert("Traccia salvata con successo nel tuo Profilo!");
+        }
+        
     </script>
 </body>
 </html>

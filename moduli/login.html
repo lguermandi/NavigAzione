@@ -84,6 +84,12 @@
                 </div>
             </div>
 
+            <!-- SEZIONE STORICO ROTTE -->
+            <div class="section-title" style="margin-top: 30px;">Archivio Navigazioni GPS</div>
+            <div id="lista-tracce" style="margin-top: 15px; text-align: left;">
+                <!-- Le tracce appariranno qui -->
+            </div>
+
             <div class="section-title">Dati Navigatore</div>
             <div style="text-align: left; margin-top: 15px;">
                 <div class="input-group">
@@ -190,6 +196,7 @@
             document.getElementById('testo-email-utente').textContent = email;
             
             aggiornaStatistiche();
+            aggiornaListaTracce(email);
         }
 
         function aggiornaStatistiche() {
@@ -233,6 +240,53 @@
             document.getElementById('auth-password').value = "";
             document.getElementById('auth-status').textContent = "";
         }
+
+        // --- FUNZIONI PER STORICO E DOWNLOAD GPX ---
+        function aggiornaListaTracce(email) {
+            const contenitore = document.getElementById('lista-tracce');
+            const storico = JSON.parse(localStorage.getItem('tracce_' + email) || "[]");
+            
+            if (storico.length === 0) {
+                contenitore.innerHTML = "<p style='color:#94a3b8; font-size:0.9rem;'>Nessuna traccia GPS registrata.</p>";
+                return;
+            }
+
+            let html = "";
+            storico.reverse().forEach(traccia => {
+                html += `
+                    <div style="background: #0f172a; padding: 10px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #10b981;">
+                        <div style="color: #f8fafc; font-weight: bold;">${traccia.nome}</div>
+                        <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 8px;">${traccia.data} - ${traccia.punti.length} wp</div>
+                        <button class="btn-action" style="padding: 5px 10px; font-size: 0.8rem; background: #38bdf8; color: #0f172a;" onclick='esportaTracciaGPX(${JSON.stringify(traccia)})'>
+                            📥 Scarica File GPX
+                        </button>
+                    </div>
+                `;
+            });
+            contenitore.innerHTML = html;
+        }
+
+        function esportaTracciaGPX(traccia) {
+            let gpx = `<?xml version="1.0" encoding="UTF-8"?>
+            <gpx version="1.1" creator="Plancia di Comando NavigAzione">
+                <trk><name>${traccia.nome}</name><trkseg>`;
+            
+            traccia.punti.forEach(p => {
+                const speedMS = (parseFloat(p.vel) / 1.94384).toFixed(2); 
+                gpx += `\n<trkpt lat="${p.lat}" lon="${p.lon}"><time>${p.time}</time><speed>${speedMS}</speed></trkpt>`;
+            });
+
+            gpx += `\n</trkseg></trk></gpx>`;
+
+            const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${traccia.nome.replace(/\s+/g, '_')}.gpx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
     </script>
 </body>
 </html>
