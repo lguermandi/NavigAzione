@@ -251,19 +251,76 @@
                 return;
             }
 
+            // Formula matematica per calcolare la distanza tra due punti GPS sulla curvatura terrestre
+            function calcolaDistanzaMiglia(lat1, lon1, lat2, lon2) {
+                const R = 3440.065; // Raggio della Terra in Miglia Nautiche
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                          Math.sin(dLon/2) * Math.sin(dLon/2);
+                return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+            }
+
             let html = "";
             storico.reverse().forEach(traccia => {
+                let distanzaNm = 0;
+                let tempoOre = 0;
+                let stringaStat = "Dati insufficienti per le statistiche";
+
+                // Se la traccia ha almeno due punti, calcoliamo le statistiche
+                if (traccia.punti && traccia.punti.length > 1) {
+                    // Somma la distanza di tutti i piccoli segmenti
+                    for (let i = 1; i < traccia.punti.length; i++) {
+                        distanzaNm += calcolaDistanzaMiglia(
+                            traccia.punti[i-1].lat, traccia.punti[i-1].lon,
+                            traccia.punti[i].lat, traccia.punti[i].lon
+                        );
+                    }
+
+                    // Calcola il tempo tra il primo e l'ultimo fix GPS
+                    const tInizio = new Date(traccia.punti[0].time);
+                    const tFine = new Date(traccia.punti[traccia.punti.length - 1].time);
+                    tempoOre = (tFine - tInizio) / 3600000; // Converte i millisecondi in ore
+
+                    if (tempoOre > 0 && distanzaNm > 0) {
+                        const velMediaNodi = distanzaNm / tempoOre;
+                        const distanzaKm = distanzaNm * 1.852;
+                        const velMediaKmh = velMediaNodi * 1.852;
+                        
+                        const oreF = Math.floor(tempoOre);
+                        const minF = Math.round((tempoOre - oreF) * 60);
+
+                        stringaStat = `⏱️ Tempo: <b>${oreF}h ${minF}m</b><br>
+                                       📏 Distanza: <b>${distanzaNm.toFixed(2)} Nm</b> <span style="color:#64748b;">(${distanzaKm.toFixed(2)} km)</span><br>
+                                       ⛵ Media: <b>${velMediaNodi.toFixed(1)} kn</b> <span style="color:#64748b;">(${velMediaKmh.toFixed(1)} km/h)</span>`;
+                    }
+                }
+
                 html += `
-                    <div style="background: #0f172a; padding: 10px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #10b981;">
-                        <div style="color: #f8fafc; font-weight: bold;">${traccia.nome}</div>
-                        <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 8px;">${traccia.data} - ${traccia.punti.length} wp</div>
-                        <button class="btn-action" style="padding: 5px 10px; font-size: 0.8rem; background: #38bdf8; color: #0f172a;" onclick='esportaTracciaGPX(${JSON.stringify(traccia)})'>
+                    <div style="background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #10b981;">
+                        <div style="color: #f8fafc; font-weight: bold; font-size: 1.1rem;">${traccia.nome}</div>
+                        <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 10px;">${traccia.data} - ${traccia.punti.length} wp</div>
+                        
+                        <div style="background: #0f172a; padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.6;">
+                            ${stringaStat}
+                        </div>
+                        
+                        <button class="btn-action" style="padding: 8px 12px; font-size: 0.9rem; background: #38bdf8; color: #0f172a; width: 100%; font-weight: bold;" onclick='esportaTracciaDaId(${traccia.id})'>
                             📥 Scarica File GPX
                         </button>
                     </div>
                 `;
             });
             contenitore.innerHTML = html;
+        }
+
+        // Nuova funzione per estrarre il GPX senza bloccare la memoria del browser
+        window.esportaTracciaDaId = function(tracciaId) {
+            const emailUtente = localStorage.getItem('plancia_utente');
+            const storico = JSON.parse(localStorage.getItem('tracce_' + emailUtente) || "[]");
+            const traccia = storico.find(t => t.id === tracciaId);
+            if (traccia) esportaTracciaGPX(traccia);
         }
 
         function esportaTracciaGPX(traccia) {
