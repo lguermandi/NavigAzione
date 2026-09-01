@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plancia di Comando Nautica</title>
+    
+    <!-- Colleghiamo il CSS e il file di Configurazione -->
+    <link rel="stylesheet" href="css/style.css">
+    <script defer src="config.js"></script>
+
+    <!-- INIZIO CODICE PWA (App Offline) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3143/3143621.png">
+    <!-- FINE CODICE PWA -->
+</head>
+<body>
+
+    <header>
+        <div class="logo">⛵ Plancia di Comando</div>
+        <nav id="menu-navigazione">
+            <!-- I bottoni verranno creati qui automaticamente dallo script -->
+        </nav>
+    </header>
+
+    <main>
+        <!-- L'iframe è lo "schermo" dove vengono proiettati i vari moduli -->
+        <iframe id="app-frame" src="moduli/home.html"></iframe>
+    </main>
+
+<script defer src="js/app-shell.js"></script>
+
+</body>
+</html>

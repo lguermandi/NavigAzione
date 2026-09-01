@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* Stili extra specifici per questo modulo */
+        .hidden { display: none !important; }
+        .setup-card, .result-card { text-align: center; max-width: 600px; margin: 0 auto; }
+        select { padding: 10px; border-radius: 6px; background: #0f172a; color: white; border: 1px solid #475569; font-size: 1rem; margin: 10px 0; width: 100%; }
+        .header-quiz { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #334155; }
+        .timer { font-size: 1.5rem; font-weight: bold; color: #fb923c; font-family: monospace; }
+        .nav-domande { display: flex; justify-content: space-between; margin-top: 20px; }
+        .nav-domande button { flex: 1; margin: 0 5px; }
+        .selezionata { background: #38bdf8 !important; color: #0f172a !important; border-color: #38bdf8 !important; font-weight: bold; }
+        .errore-item { text-align: left; background: #334155; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- MESSAGGIO DI CARICAMENTO -->
+    <div id="loading" style="text-align: center; margin-top: 50px;">
+        <h2 style="color: #38bdf8;">Scarico il database ministeriale... ⛵</h2>
+    </div>
+
+    <!-- STATO 1: SCHERMATA INIZIALE (SETUP) -->
+    <div id="schermata-setup" class="panel hidden setup-card">
+        <h2>Modalità di Allenamento</h2>
+        <p class="subtitle">Scegli come vuoi prepararti oggi</p>
+        
+        <div style="background: #0f172a; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="margin-bottom: 10px;">Simulazione Esame Base</h3>
+            <p style="font-size: 0.9rem; color: #94a3b8;">20 domande estratte a caso. Massimo 3 errori consentiti. Tempo: 30 minuti.</p>
+            <button class="btn-action" onclick="avviaQuiz('esame')">Inizia Simulazione</button>
+        </div>
+
+        <div style="background: #0f172a; padding: 20px; border-radius: 8px;">
+            <h3 style="margin-bottom: 10px;">Studio per Argomento</h3>
+            <select id="select-argomento">
+                <option value="">Caricamento argomenti...</option>
+            </select>
+            <button class="btn-action" style="background: #4ade80;" onclick="avviaQuiz('argomento')">Allenati sull'Argomento</button>
+        </div>
+    </div>
+
+    <!-- STATO 2: QUIZ IN CORSO -->
+    <div id="schermata-quiz" class="panel hidden" style="max-width: 700px; margin: 0 auto;">
+        <div class="header-quiz">
+            <div id="contatore-domande" style="font-weight: bold; color: #94a3b8;">Domanda 1 di 20</div>
+            <div class="timer" id="timer-display">30:00</div>
+        </div>
+
+        <div class="categoria" id="categoria-label">Categoria</div>
+        <div class="domanda" id="testo-domanda">Testo domanda...</div>
+        
+        <div class="opzioni" id="contenitore-opzioni">
+            <!-- I bottoni verranno creati da JS -->
+        </div>
+
+        <div class="nav-domande">
+            <button class="btn-action" style="background: #475569; color: white;" onclick="cambiaDomanda(-1)" id="btn-prev">⬅ Precedente</button>
+            <button class="btn-action" style="background: #475569; color: white;" onclick="cambiaDomanda(1)" id="btn-next">Successiva ➡</button>
+        </div>
+        <button class="btn-action" style="background: #ef4444; width: 100%; margin-top: 20px;" onclick="consegnaQuiz()">Consegna Esame 🏁</button>
+    </div>
+
+    <!-- STATO 3: RISULTATI -->
+    <div id="schermata-risultati" class="panel hidden result-card">
+        <h2 id="esito-titolo" style="font-size: 2rem;">Esito</h2>
+        <div class="info-box" style="font-size: 1.2rem; margin-bottom: 20px;" id="esito-punteggio">
+            Punteggio: X / Y
+        </div>
+        
+        <p id="stato-salvataggio" style="color: #fb923c; font-size: 0.9rem;">Salvataggio risultati in cloud in corso...</p>
+
+        <h3 style="margin-top: 30px; text-align: left;">I tuoi Errori:</h3>
+        <div id="lista-errori" style="max-height: 400px; overflow-y: auto;">
+            <!-- Gli errori verranno elencati qui -->
+        </div>
+
+        <button class="btn-action" style="margin-top: 20px; width: 100%;" onclick="tornaAlSetup()">Torna al Menu</button>
+    </div>
+
+
+<script src="../js/quiz-module.js"></script>
+
+</body>
+</html>

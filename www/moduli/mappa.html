@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <!-- Librerie CSS e JS di Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        #mappa-container { 
+            height: 500px; 
+            width: 100%; 
+            border-radius: 8px; 
+            border: 2px solid #334155; 
+            z-index: 1;
+            cursor: crosshair; /* Cambia il cursore per far capire che si può cliccare */
+        }
+        .dashboard-rotta {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dato-rotta {
+            font-size: 1.5rem;
+            color: #38bdf8;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Mappa & Rotte 🌍</h1>
+    <div class="subtitle">Plotter Cartografico e Calcolo Distanze</div>
+
+    <!-- Pannello di controllo superiore -->
+    <div class="dashboard-rotta">
+        <div>
+            <span style="color: #94a3b8; font-size: 0.9rem;">Distanza Totale Rotta</span><br>
+            <span class="dato-rotta" id="distanza-totale">0.00</span> <span style="color: #38bdf8;">Nm</span>
+        </div>
+        <div>
+            <button class="btn-action" style="background: #ef4444; padding: 10px 20px; font-size: 0.9rem;" onclick="cancellaRotta()">Cestina Rotta</button>
+        </div>
+    </div>
+
+    <!-- Contenitore Mappa -->
+    <div class="panel">
+        <div id="mappa-container"></div>
+        <p style="color: #94a3b8; font-size: 0.85rem; text-align: center; margin-top: 10px;">
+            ℹ️ Clicca in sequenza sulla mappa per tracciare i waypoint.
+        </p>
+    </div>
+
+    <script src="../js/mappa-module.js"></script>
+</body>
+</html>

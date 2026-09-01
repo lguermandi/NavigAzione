@@ -1,0 +1,17 @@
+{
+  "name": "Simulatore Navigazione Nautica",
+  "short_name": "Navigazione",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "description": "App per il carteggio, quiz patente e tattica vela.",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3143/3143621.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
