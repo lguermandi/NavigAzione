@@ -18,7 +18,7 @@ jobs:
       - name: 2. Configura Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: 3. Configura Java (richiesto da Android)
         uses: actions/setup-java@v3
