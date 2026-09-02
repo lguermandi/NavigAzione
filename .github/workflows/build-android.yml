@@ -37,13 +37,23 @@ jobs:
       - name: 6. Sblocca i permessi di compilazione
         run: chmod +x android/gradlew
 
-      - name: 7. Genera il file APK
+      - name: 7. Genera l'APK (Versione Rilascio)
         run: |
           cd android
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
-      - name: 8. Carica l'APK per il download
+      - name: 8. Firma digitale dell'APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: poseidon
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEYSTORE_PASSWORD }}
+
+      - name: 9. Carica l'APK firmato ufficiale
         uses: actions/upload-artifact@v4
         with:
-          name: Poseidon-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Poseidon-APK-Ufficiale
+          path: ${{steps.sign_app.outputs.signedReleaseFile}}
