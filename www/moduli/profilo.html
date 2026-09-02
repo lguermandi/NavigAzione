@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .profile-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            margin-bottom: 20px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        .backup-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .route-item {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Profilo & Registro ⚓</h1>
+    <div class="subtitle">Statistiche e Gestione Dati di Bordo</div>
+
+    <!-- Scheda Riepilogo -->
+    <div class="profile-card">
+        <h3 style="margin-top:0; color:#f8fafc;">Riepilogo Miglia</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="totale-miglia">0.0</div>
+                <div class="stat-label">Miglia Totali (Nm)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totale-uscite">0</div>
+                <div class="stat-label">Rotte Registrate</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup e Ripristino Dati -->
+    <div class="profile-card">
+        <h3 style="margin-top:0; color:#f8fafc;">Salvataggio Dati</h3>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px;">
+            Scarica una copia dei tuoi tracciati sul telefono prima di aggiornare o disinstallare l'app, oppure ripristina un file precedente.
+        </p>
+        <div class="backup-actions">
+            <button class="nav-btn" style="flex: 1; padding: 12px 6px;" onclick="esportaDati()">💾 Esporta Backup</button>
+            <button class="nav-btn" style="flex: 1; padding: 12px 6px;" onclick="document.getElementById('file-input').click()">📥 Importa Backup</button>
+            <input type="file" id="file-input" accept=".json" style="display: none;" onchange="importaDati(event)">
+        </div>
+    </div>
+
+    <!-- Storico Ultime Rotte -->
+    <div class="profile-card">
+        <h3 style="margin-top:0; color:#f8fafc;">Ultime Rotte Registrate</h3>
+        <div id="lista-rotte">
+            <p style="font-size: 0.85rem; color: #94a3b8; text-align: center;">Nessuna rotta salvata al momento.</p>
+        </div>
+    </div>
+
+    <script src="../js/profilo-module.js"></script>
+</body>
+</html>

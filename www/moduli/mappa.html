@@ -40,13 +40,22 @@
     <div class="subtitle">Plotter Cartografico e Calcolo Distanze</div>
 
     <!-- Pannello di controllo superiore -->
-    <div class="dashboard-rotta">
-        <div>
-            <span style="color: #94a3b8; font-size: 0.9rem;">Distanza Totale Rotta</span><br>
-            <span class="dato-rotta" id="distanza-totale">0.00</span> <span style="color: #38bdf8;">Nm</span>
+    <div class="dashboard-rotta" style="flex-wrap: wrap; gap: 10px;">
+        <div style="flex: 1; min-width: 80px;">
+            <span style="color: #94a3b8; font-size: 0.8rem;">Distanza</span><br>
+            <span class="dato-rotta" id="distanza-totale">0.00</span> <span style="color: #38bdf8; font-size: 0.9rem;">Nm</span>
         </div>
-        <div>
-            <button class="btn-action" style="background: #ef4444; padding: 10px 20px; font-size: 0.9rem;" onclick="cancellaRotta()">Cestina Rotta</button>
+        <div style="flex: 1; min-width: 80px;">
+            <span style="color: #94a3b8; font-size: 0.8rem;">Velocità</span><br>
+            <span class="dato-rotta" id="velocita-attuale" style="color: #22c55e;">0.0</span> <span style="color: #22c55e; font-size: 0.9rem;">Kn</span>
+        </div>
+        <div style="flex: 1; min-width: 80px;">
+            <span style="color: #94a3b8; font-size: 0.8rem;">Tempo</span><br>
+            <span class="dato-rotta" id="tempo-trascorso" style="color: #facc15; font-size: 1.2rem;">00:00</span>
+        </div>
+        <div style="display: flex; gap: 8px; width: 100%; margin-top: 10px;">
+            <button class="btn-action" id="btn-naviga" style="background: #22c55e; flex: 2; padding: 12px; font-size: 1rem; font-weight: bold;" onclick="toggleNavigazione()">▶ Inizia Navigazione</button>
+            <button class="btn-action" style="background: #ef4444; flex: 1; padding: 12px; font-size: 1rem;" onclick="cancellaRotta()">🗑️</button>
         </div>
     </div>
 
