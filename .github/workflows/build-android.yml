@@ -42,6 +42,9 @@ jobs:
           cd android
           ./gradlew assembleRelease
 
+      - name: 7.5 Installa strumenti Android richiesti per la firma
+        run: echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;29.0.3"
+
       - name: 8. Firma digitale dell'APK
         uses: r0adkll/sign-android-release@v1
         id: sign_app
@@ -51,7 +54,6 @@ jobs:
           alias: poseidon
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          buildToolsVersion: 34.0.0
 
       - name: 9. Carica l'APK firmato ufficiale
         uses: actions/upload-artifact@v4
