@@ -157,7 +157,7 @@
             return;
         }
 
-        statusDiv.innerText = "Acquisizione coordinate GPS e connessione...";
+        statusDiv.innerText = "Connessione...";
         statusDiv.style.color = "#38bdf8";
 
         // Cripta la password e legge il GPS contemporaneamente
@@ -169,15 +169,17 @@
 
         try {
             const response = await fetch(scriptURL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    azione: azione,
-                    email: email,
-                    passwordHash: passwordHash,
-                    lat: posizione.lat,     // Nuovo dato inviato
-                    lng: posizione.lng      // Nuovo dato inviato
-                })
-            });
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                azione: azione,
+                email: email,
+                passwordHash: passwordHash,
+                lat: posizione.lat,     
+                lng: posizione.lng      
+            })
+        });
+          
             
             const result = await response.json();
             

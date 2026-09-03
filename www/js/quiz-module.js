@@ -167,11 +167,12 @@
 
     async function salvaInCloud(mod, punt, esito, errTxt) {
         const payload = {
-            modalita: mod === 'esame' ? 'Simulazione Esame Base' : 'Argomento',
-            punteggio: punt,
-            esito: esito,
-            errori: errTxt
-        };
+        email: localStorage.getItem('poseidon_user'),
+        modalita: mod === 'esame' ? 'Simulazione Esame Base' : 'Argomento',
+        punteggio: punt,
+        esito: esito,
+        errori: errTxt
+    };
 
         try {
             await fetch(API_URL, {
